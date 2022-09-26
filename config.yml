@@ -1,0 +1,33 @@
+spectaql:
+  logoFile: ./assets/app_logo.png
+  faviconFile: ./assets/app_logo.png
+  displayAllServers: true
+
+introspection:
+  removeTrailingPeriodFromDescriptions: false
+  schemaFile: ./schema/schema.graphql
+  metadataFile: ./schema/introspectionSchema.json
+  # dynamicExamplesProcessingModule: ./examples/customizations/examples
+  queryNameStrategy: capitalizeFirst
+  fieldExpansionDepth: 2
+
+extensions:
+  graphqlScalarExamples: true
+
+info:
+  title: CodeButchers Space GraphQL API Reference
+  description: Welcome to the party!
+  termsOfService: https://www.example.com/terms
+  contact:
+    name: API Support
+    url: https://github.com/codebutchers
+    email: dthuanle.20@gmail.com
+
+servers:
+  - url: https://be-cspace-postgres-db.herokuapp.com/graphql
+    description: Production
+    production: true
+    headers:
+      - name: Authorization
+        example: Bearer <YOUR_TOKEN_HERE>
+        comment: Your foo from bar

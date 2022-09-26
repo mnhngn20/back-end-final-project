@@ -1,0 +1,708 @@
+type Query {
+  getEquipment(id: Float!): EquipmentResponse!
+  getEquipments(input: GetEquipmentsInput!): EquipmentListResponse!
+  getEquipmentType(id: Float!): EquipmentTypeResponse!
+  getEquipmentTypes(input: GetEquipmentTypesInput!): EquipmentTypeListResponse!
+  getLocation(id: Float!): LocationResponse!
+  getLocations(input: GetLocationsInput!): LocationListResponse!
+  getPlan(id: Float!): PlanResponse!
+  getPlans(roomTypeId: Float): PlanListResponse!
+  getPromotion(id: Float!): PromotionResponse!
+  getPromotions(input: GetPromotionsInput!): PromotionListResponse!
+  getReservation(id: Float!): ReservationResponse!
+  getReservations(input: GetReservationsInput!): ListReservationResponse!
+  getReview(id: Float!): ReviewResponse!
+  getReviews(input: GetReviewsInput!): ReviewListResponse!
+  getRoom(id: Float!): RoomResponse!
+  getRooms(input: GetRoomsInput!): RoomListResponse!
+  getRoomType(id: Float!): RoomTypeResponse!
+  getRoomTypes(input: GetRoomTypesInput!): RoomTypeListResponse!
+  me: UserResponse!
+  getUser(id: Float!): UserResponse!
+  getUsers(input: GetUsersInput!): ListUserResponse!
+  getLocationSummary(locationId: Float = null): LocationSummaryResponse!
+  getGeneralSummary: GeneralSummaryResponse!
+  getReservationReport(input: GetLocationReportChartInput!): ReportsResponse!
+  getNewUserReport(input: GetGeneralReportChartInput!): ReportsResponse!
+  getIncomeReport(input: GetLocationReportChartInput!): ReportsResponse!
+}
+
+type EquipmentResponse implements IResponse {
+  message: String
+  equipment: Equipment
+}
+
+interface IResponse {
+  message: String
+}
+
+type Equipment {
+  id: ID!
+  roomId: Float!
+  name: String!
+  equipmentTypeId: Float!
+  image: String
+  status: Boolean!
+  room: Room!
+  equipmentType: EquipmentType!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type Room {
+  id: ID!
+  roomTypeId: Float!
+  name: String
+  floor: Float!
+  locationId: Float!
+  description: String
+  image: String
+  capacity: Float!
+  status: Boolean!
+  basePrice: Float!
+  numberOfReviews: Float!
+  overallRate: Float!
+  roomType: RoomType
+  location: Location
+  equipments: [Equipment!]
+  rentedPerDays: [RentedPerDayByRoom!]
+  reservations: [Reservation!]
+  reviews: [Review!]
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type RoomType {
+  id: ID!
+  name: String!
+  locationId: Float
+  description: String
+  rooms: [Room!]
+  plans: [Plan!]
+  location: Location
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type Plan {
+  id: ID!
+  name: String!
+  description: String
+  roomTypeId: Float!
+  multiplicationFactor: Float!
+  numOfDays: Float!
+  status: Boolean!
+  roomType: RoomType!
+  reservations: [Reservation!]
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type Reservation {
+  id: ID!
+  userId: Float!
+  roomId: Float!
+  status: RESERVATION_STATUS!
+  paymentMethod: PAYMENT_METHOD!
+  locationId: Float!
+  promotionId: Float
+  creatorId: Float
+  fromDate: DateTime!
+  toDate: DateTime!
+  planId: Float!
+  totalPrice: Float!
+  finalPrice: Float!
+  hasReviewed: Boolean!
+  room: Room
+  review: Review
+  location: Location
+  user: User
+  creator: User
+  plan: Plan
+  promotion: Promotion
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+enum RESERVATION_STATUS {
+  Paid
+  Unpaid
+  Canceled
+}
+
+enum PAYMENT_METHOD {
+  Cash
+  Paypal
+}
+
+# The javascript `Date` as string. Type represents date and time as the ISO Date string.
+scalar DateTime
+
+type Review {
+  id: ID!
+  roomId: Float!
+  reservationId: Float!
+  content: String!
+  images: String!
+  userId: Float!
+  rate: Float!
+  user: User!
+  room: Room
+  reservation: Reservation
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type User {
+  id: ID!
+  email: String!
+  fullName: String
+  identityNumber: String
+  dob: DateTime
+  avatar: String
+  phoneNumber: String
+  isActive: Boolean
+  balance: Float!
+  role: USER_ROLE!
+  locationId: Float
+  reviews: [Review!]
+  location: Location
+  reservations: [Reservation!]
+  reservationsCreatedForCustomer: [Reservation!]
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+enum USER_ROLE {
+  SuperAdmin
+  Admin
+  Employee
+  Customer
+}
+
+type Location {
+  id: ID!
+  name: String!
+  address: String!
+  image: String
+  description: String
+  income: Float!
+  status: Boolean!
+  reservations: [Reservation!]
+  promotions: [Promotion!]
+  roomTypes: [RoomType!]
+  equipmentTypes: [EquipmentType!]
+  rooms: [Room!]
+  users: [User!]
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type Promotion {
+  id: ID!
+  locationId: Float
+  code: String!
+  type: PROMOTION_TYPE!
+  amount: Float!
+  description: String
+  isActive: Boolean!
+  startDate: DateTime!
+  expirationDate: DateTime!
+  reservations: [Reservation!]
+  location: Location
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+enum PROMOTION_TYPE {
+  PercentageDiscount
+  FixedCashDiscount
+}
+
+type EquipmentType {
+  id: ID!
+  locationId: Float
+  name: String!
+  description: String
+  equipments: [Equipment!]
+  location: Location
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type RentedPerDayByRoom {
+  id: ID!
+  roomId: Float!
+  date: DateTime!
+  numOfRentals: Float!
+  room: Room!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type EquipmentListResponse implements ListResponse {
+  page: Float
+  total: Float
+  totalPages: Float
+  message: String
+  items: [Equipment!]!
+}
+
+interface ListResponse {
+  page: Float
+  total: Float
+  totalPages: Float
+  message: String
+}
+
+input GetEquipmentsInput {
+  page: Float = 1
+  limit: Float = 10
+  orderBy: ORDER_BY = ASC
+  equipmentTypeId: Float
+  name: String
+  status: Boolean
+  roomId: Float
+}
+
+enum ORDER_BY {
+  ASC
+  DESC
+}
+
+type EquipmentTypeResponse implements IResponse {
+  message: String
+  equipmentType: EquipmentType
+}
+
+type EquipmentTypeListResponse implements ListResponse {
+  page: Float
+  total: Float
+  totalPages: Float
+  message: String
+  items: [EquipmentType!]!
+}
+
+input GetEquipmentTypesInput {
+  page: Float = 1
+  limit: Float = 10
+  orderBy: ORDER_BY = ASC
+  keyword: String
+  name: String
+  description: String
+  locationId: Float
+}
+
+type LocationResponse implements IResponse {
+  message: String
+  location: Location
+}
+
+type LocationListResponse implements ListResponse {
+  page: Float
+  total: Float
+  totalPages: Float
+  message: String
+  items: [Location!]!
+}
+
+input GetLocationsInput {
+  limit: Float = 10
+  orderBy: ORDER_BY = ASC
+  page: Float = 1
+  status: Boolean
+  name: String
+  address: String
+  keyword: String
+}
+
+type PlanResponse implements IResponse {
+  message: String
+  plan: Plan
+}
+
+type PlanListResponse {
+  message: String!
+  items: [Plan!]!
+}
+
+type PromotionResponse implements IResponse {
+  message: String
+  promotion: Promotion
+}
+
+type PromotionListResponse implements ListResponse {
+  page: Float
+  total: Float
+  totalPages: Float
+  message: String
+  items: [Promotion!]!
+}
+
+input GetPromotionsInput {
+  limit: Float = 10
+  orderBy: ORDER_BY = ASC
+  page: Float = 1
+  code: String
+  type: PROMOTION_TYPE
+  locationId: Float
+  startDate: DateTime
+  expirationDate: DateTime
+}
+
+type ReservationResponse implements IResponse {
+  message: String
+  reservation: Reservation
+}
+
+type ListReservationResponse implements ListResponse {
+  page: Float
+  total: Float
+  totalPages: Float
+  message: String
+  items: [Reservation!]!
+}
+
+input GetReservationsInput {
+  limit: Float = 10
+  orderBy: ORDER_BY = ASC
+  page: Float = 1
+  userId: Float
+  creatorId: Float
+  roomId: Float
+  status: RESERVATION_STATUS
+  paymentMethod: PAYMENT_METHOD
+  hasReviewed: Boolean
+  fromDate: DateTime
+  toDate: DateTime
+}
+
+type ReviewResponse implements IResponse {
+  message: String
+  review: Review
+}
+
+type ReviewListResponse implements ListResponse {
+  page: Float
+  total: Float
+  totalPages: Float
+  message: String
+  items: [Review!]!
+}
+
+input GetReviewsInput {
+  limit: Float = 10
+  orderBy: ORDER_BY = ASC
+  page: Float = 1
+  userId: Float
+  roomId: Float
+  reservationId: Float
+}
+
+type RoomResponse implements IResponse {
+  message: String
+  room: Room
+}
+
+type RoomListResponse implements ListResponse {
+  page: Float
+  total: Float
+  totalPages: Float
+  message: String
+  items: [Room!]!
+}
+
+input GetRoomsInput {
+  page: Float = 1
+  limit: Float = 10
+  roomTypeId: Float
+  locationId: Float
+  keyword: String
+  name: String
+  description: String
+  floor: Float
+  minRate: Float
+  status: Boolean
+  minBasePrice: Float
+  maxBasePrice: Float
+  orderBy: ORDER_BY = ASC
+}
+
+type RoomTypeResponse implements IResponse {
+  message: String
+  roomType: RoomType
+}
+
+type RoomTypeListResponse implements ListResponse {
+  page: Float
+  total: Float
+  totalPages: Float
+  message: String
+  items: [RoomType!]!
+}
+
+input GetRoomTypesInput {
+  page: Float = 1
+  limit: Float = 10
+  locationId: Float
+  keyword: String
+  name: String
+  description: String
+  orderBy: ORDER_BY = ASC
+}
+
+type UserResponse implements IResponse {
+  message: String
+  user: User
+}
+
+type ListUserResponse implements ListResponse {
+  page: Float
+  total: Float
+  totalPages: Float
+  message: String
+  items: [User!]!
+}
+
+input GetUsersInput {
+  limit: Float = 10
+  orderBy: ORDER_BY = ASC
+  page: Float = 1
+  email: String = ""
+  fullName: String
+  locationId: Float
+  isActive: Boolean
+  role: USER_ROLE
+}
+
+type LocationSummaryResponse {
+  totalReservation: Float!
+  totalIncome: Float!
+  totalRoom: Float!
+  incomePerRoom: Float!
+}
+
+type GeneralSummaryResponse {
+  totalReservation: Float!
+  totalNewUser: Float!
+  totalLocation: Float!
+  totalCustomer: Float!
+}
+
+type ReportsResponse {
+  message: String!
+  items: [ReportChart!]!
+}
+
+type ReportChart {
+  date: DateTime!
+  value: Float!
+}
+
+input GetLocationReportChartInput {
+  locationId: Float
+  fromDate: DateTime!
+  toDate: DateTime!
+}
+
+input GetGeneralReportChartInput {
+  fromDate: DateTime!
+  toDate: DateTime!
+}
+
+type Mutation {
+  updateEquipmentStatus(input: UpdateEquipmentStatusInput!): EquipmentResponse!
+  upsertEquipment(input: UpsertEquipmentInput!): EquipmentResponse!
+  upsertEquipmentType(input: UpsertEquipmentTypeInput!): EquipmentTypeResponse!
+  upsertLocation(input: UpsertLocationInput!): LocationResponse!
+  updateLocationStatus(input: UpdateLocationStatusInput!): LocationResponse!
+  upsertPlan(input: UpsertPlanInput!): PlanResponse!
+  upsertPromotion(input: UpsertPromotionInput!): PromotionResponse!
+  createReservation(input: CreateReservationInput!): ReservationResponse!
+  changeReservationStatus(input: ChangeReservationStatusInput!): String!
+  upsertReview(input: UpsertReviewInput!): ReviewResponse!
+  upsertRoom(input: UpsertRoomInput!): RoomResponse!
+  upsertRoomType(input: UpsertRoomTypeInput!): RoomTypeResponse!
+  register(input: RegisterLoginInput!): UserResponse!
+  login(input: RegisterLoginInput!): LoginResponse!
+  getAccessToken(input: GetAccessTokenInput!): LoginResponse!
+  resetPassword(email: String!): ResetPasswordResponse!
+  resetPasswordConfirm(
+    input: ResetPasswordConfirmInput!
+  ): ResetPasswordResponse!
+  updateMe(input: UpdateMeInput!): UserResponse!
+  changePassword(input: ChangePasswordInput!): String!
+  deposit(amount: Float!): String!
+  createUser(input: CreateUserInput!): UserResponse!
+  updateUser(input: UpdateUserInput!): UserResponse!
+  changeUserStatus(input: ChangeUserStatusInput!): String!
+  changeUserRole(input: ChangeUserRoleInput!): String!
+}
+
+input UpdateEquipmentStatusInput {
+  id: Float!
+  status: Boolean = true
+}
+
+input UpsertEquipmentInput {
+  id: Float
+  roomId: Float!
+  name: String
+  equipmentTypeId: Float
+  image: String
+  status: Boolean = true
+}
+
+input UpsertEquipmentTypeInput {
+  id: Float
+  name: String
+  locationId: Float
+  description: String
+}
+
+input UpsertLocationInput {
+  id: Float
+  name: String
+  address: String
+  image: String
+  description: String
+  status: Boolean = true
+}
+
+input UpdateLocationStatusInput {
+  id: Float!
+  status: Boolean!
+}
+
+input UpsertPlanInput {
+  id: Float
+  name: String
+  description: String
+  roomTypeId: Float
+  multiplicationFactor: Float
+  numOfDays: Float
+  status: Boolean
+}
+
+input UpsertPromotionInput {
+  id: Float
+  locationId: Float
+  code: String
+  type: PROMOTION_TYPE
+  amount: Float
+  description: String
+  isActive: Boolean = true
+  startDate: DateTime
+  expirationDate: DateTime
+}
+
+input CreateReservationInput {
+  roomId: Float!
+  userId: Float
+  paymentMethod: PAYMENT_METHOD = Cash
+  planId: Float!
+  promotionCode: String
+  fromDate: DateTime!
+  toDate: DateTime!
+}
+
+input ChangeReservationStatusInput {
+  id: Float!
+  status: RESERVATION_STATUS!
+}
+
+input UpsertReviewInput {
+  id: Float
+  images: String
+  content: String
+  rate: Float
+  reservationId: Float!
+}
+
+input UpsertRoomInput {
+  id: Float
+  locationId: Float
+  roomTypeId: Float
+  name: String
+  floor: Float
+  description: String
+  image: String
+  capacity: Float
+  status: Boolean
+  basePrice: Float
+}
+
+input UpsertRoomTypeInput {
+  id: Float
+  name: String
+  description: String
+}
+
+input RegisterLoginInput {
+  email: String!
+  password: String!
+}
+
+type LoginResponse implements IResponse {
+  message: String
+  user: User
+  accessToken: String
+  refreshToken: String
+}
+
+input GetAccessTokenInput {
+  refreshToken: String!
+}
+
+type ResetPasswordResponse {
+  message: String
+}
+
+input ResetPasswordConfirmInput {
+  token: String!
+  password: String!
+}
+
+input UpdateMeInput {
+  fullName: String
+  avatar: String
+  identityNumber: String
+  phoneNumber: String
+  dob: DateTime
+}
+
+input ChangePasswordInput {
+  oldPassword: String!
+  password: String!
+}
+
+input CreateUserInput {
+  email: String!
+  password: String!
+  fullName: String
+  avatar: String
+  identityNumber: String
+  phoneNumber: String
+  locationId: Float
+  dob: DateTime
+  role: USER_ROLE = Customer
+}
+
+input UpdateUserInput {
+  id: Float!
+  fullName: String
+  avatar: String
+  identityNumber: String
+  phoneNumber: String
+  dob: DateTime
+}
+
+input ChangeUserStatusInput {
+  id: Float!
+  isActive: Boolean!
+}
+
+input ChangeUserRoleInput {
+  id: Float!
+  role: USER_ROLE!
+}

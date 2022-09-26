@@ -1,0 +1,6 @@
+dist
+node_modules
+ormconfig.json
+*.txt
+.env
+src/config
