@@ -8,30 +8,38 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from "typeorm";
-import { Room } from "./Room";
+import { Location } from "./Location";
 
 @ObjectType()
 @Entity()
-export class RentedPerDayByRoom extends BaseEntity {
-  @Field((_type) => ID)
+export class ContactInformation extends BaseEntity {
+  @Field(() => ID)
   @PrimaryGeneratedColumn()
-  id!: number;
+  id: number;
 
   @Field()
   @Column()
-  roomId!: number;
-
-  @Field()
-  @Column({ type: "timestamptz" })
-  date!: Date;
+  phoneNumber: string;
 
   @Field()
   @Column()
-  numOfRentals: number = 0;
+  address: string;
 
-  // @Field((_type) => Room)
-  // @ManyToOne(() => Room, (room) => room.rentedPerDays)
-  // room: Room;
+  @Field()
+  @Column()
+  name: string;
+
+  @Field()
+  @Column()
+  email: string;
+
+  @Field()
+  @Column()
+  locationId: number;
+
+  @Field()
+  @ManyToOne(() => Location, (location) => location.contactInformations)
+  location: Location;
 
   @Field()
   @CreateDateColumn({ type: "timestamptz" })

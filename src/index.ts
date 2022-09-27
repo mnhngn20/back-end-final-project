@@ -2,7 +2,7 @@ require("dotenv").config();
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 import "reflect-metadata";
 import express from "express";
-import { createConnection } from "typeorm";
+import { DataSource } from "typeorm";
 import { ApolloServer } from "apollo-server-express";
 import { buildSchema } from "type-graphql";
 import { ApolloServerPluginLandingPageGraphQLPlayground } from "apollo-server-core";
@@ -37,6 +37,30 @@ import {
 } from "./entities";
 import NotificationHelper from "./utils/common/notificationHelper";
 
+const dataSource = new DataSource({
+  type: "postgres",
+  database: "final-project",
+  username: process.env.DB_USERNAME_DEV,
+  password: process.env.DB_PASSWORD_DEV,
+  // ssl: true,
+  // url: process.env.DB_URL_PROD,
+  logging: false,
+  synchronize: true,
+  entities: [
+    Equipment,
+    EquipmentType,
+    Location,
+    Plan,
+    Promotion,
+    RentedPerDayByRoom,
+    Reservation,
+    Review,
+    Room,
+    RoomType,
+    User,
+  ],
+});
+
 const main = async () => {
   const app = express();
   const allowedOrigins = [
@@ -65,26 +89,7 @@ const main = async () => {
 
   //SECTION: CONNECT POSTGRESQL
   console.log(">>> Connecting postgreSQL");
-  await createConnection({
-    type: "postgres",
-    ssl: true,
-    url: process.env.DB_URL_PROD,
-    logging: false,
-    synchronize: false, //TODO: make this true if update entities
-    entities: [
-      Equipment,
-      EquipmentType,
-      Location,
-      Plan,
-      Promotion,
-      RentedPerDayByRoom,
-      Reservation,
-      Review,
-      Room,
-      RoomType,
-      User,
-    ],
-  });
+  await dataSource.initialize();
 
   // SECTION: CONFIGURE GRAPHQL SERVER
   console.log(">>> Configuring graphql");

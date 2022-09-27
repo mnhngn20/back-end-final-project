@@ -11,7 +11,7 @@
     "watch": "tsc -w",
     "generate-doc": "npx spectaql config.yml"
   },
-  "author": "lokishengoku <dthuanle.20@gmail.com>",
+  "author": "mnhngn20 <mnhngn20@gmail.com>",
   "license": "MIT",
   "dependencies": {
     "@typegoose/typegoose": "^8.0.1",

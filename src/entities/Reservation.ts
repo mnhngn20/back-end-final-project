@@ -13,7 +13,6 @@ import { Room } from "./Room";
 import { User } from "./User";
 import { Location } from "./Location";
 import { PAYMENT_METHOD, RESERVATION_STATUS } from "../constants";
-import { Review } from "./Review";
 import { Plan } from "./Plan";
 import { Promotion } from "./Promotion";
 
@@ -83,25 +82,25 @@ export class Reservation extends BaseEntity {
   @Column()
   hasReviewed: boolean = false;
 
-  @Field((_type) => Room, { nullable: true })
-  @ManyToOne(() => Room, (room) => room.reservations)
-  room?: Room;
+  // @Field((_type) => Room, { nullable: true })
+  // @ManyToOne(() => Room, (room) => room.reservations)
+  // room?: Room;
 
-  @Field((_type) => Review, { nullable: true })
-  @OneToOne(() => Review, (review) => review.reservation)
-  review?: Review;
+  // @Field((_type) => Review, { nullable: true })
+  // @OneToOne(() => Review, (review) => review.reservation)
+  // review?: Review;
 
-  @Field((_type) => Location, { nullable: true })
-  @ManyToOne(() => Location, (location) => location.reservations)
-  location?: Location;
+  // @Field((_type) => Location, { nullable: true })
+  // @ManyToOne(() => Location, (location) => location.reservations)
+  // location?: Location;
 
-  @Field((_type) => User, { nullable: true })
-  @ManyToOne(() => User, (user) => user.reservations)
-  user?: User;
+  // @Field((_type) => User, { nullable: true })
+  // @ManyToOne(() => User, (user) => user.reservations)
+  // user?: User;
 
-  @Field((_type) => User, { nullable: true })
-  @ManyToOne(() => User, (user) => user.reservationsCreatedForCustomer)
-  creator?: User;
+  // @Field((_type) => User, { nullable: true })
+  // @ManyToOne(() => User, (user) => user.reservationsCreatedForCustomer)
+  // creator?: User;
 
   @Field((_type) => Plan, { nullable: true })
   @ManyToOne(() => Plan, (plan) => plan.reservations)

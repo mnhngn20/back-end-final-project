@@ -6,7 +6,7 @@ export class UpdateUserInput {
   id: number;
 
   @Field({ nullable: true })
-  fullName?: string;
+  name?: string;
 
   @Field({ nullable: true })
   avatar?: string;
@@ -18,5 +18,8 @@ export class UpdateUserInput {
   phoneNumber?: string;
 
   @Field({ nullable: true })
-  dob?: Date;
+  dateOfBirth?: Date;
+
+  @Field({ nullable: true })
+  roomId?: number;
 }

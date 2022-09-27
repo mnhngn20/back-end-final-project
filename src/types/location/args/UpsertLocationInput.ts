@@ -1,4 +1,5 @@
 import { Field, InputType } from "type-graphql";
+import { LocationContactInformationInput } from "./LocationContactInformationsInput";
 
 @InputType()
 export class UpsertLocationInput {
@@ -12,11 +13,23 @@ export class UpsertLocationInput {
   address?: string;
 
   @Field({ nullable: true })
-  image?: string;
+  images?: string;
+
+  @Field({ nullable: true })
+  thumbnail?: string;
+
+  @Field({ nullable: true })
+  lat?: number;
+
+  @Field({ nullable: true })
+  long?: number;
 
   @Field({ nullable: true })
   description?: string;
 
   @Field({ nullable: true })
-  status?: boolean = true;
+  isActive?: boolean = true;
+
+  @Field(() => [LocationContactInformationInput], { nullable: true })
+  contactInformations?: LocationContactInformationInput[];
 }

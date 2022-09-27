@@ -1,4 +1,3 @@
-import { USER_ROLE } from "../../../constants";
 import { Field, InputType } from "type-graphql";
 
 @InputType()
@@ -10,7 +9,7 @@ export class CreateUserInput {
   password: string;
 
   @Field({ nullable: true })
-  fullName?: string;
+  name?: string;
 
   @Field({ nullable: true })
   avatar?: string;
@@ -19,14 +18,17 @@ export class CreateUserInput {
   identityNumber?: string;
 
   @Field({ nullable: true })
+  address?: string;
+
+  @Field({ nullable: true })
   phoneNumber?: string;
 
   @Field({ nullable: true })
   locationId?: number;
 
   @Field({ nullable: true })
-  dob?: Date;
+  dateOfBirth?: Date;
 
-  @Field((_type) => USER_ROLE, { nullable: true })
-  role?: USER_ROLE = USER_ROLE.Customer;
+  @Field({ nullable: true })
+  roomId?: number;
 }

@@ -19,6 +19,7 @@ import { ILike } from "typeorm";
 import { Context } from "../types/Context";
 import { USER_ROLE } from "../constants";
 import { OutOfBoundsError, PermissionDeniedError } from "../types/Errors";
+import { ContactInformation } from "../entities/ContactInformation";
 
 @Resolver()
 export class LocationResolver {
@@ -90,7 +91,18 @@ export class LocationResolver {
   @UseMiddleware(authMiddleware)
   async upsertLocation(
     @Arg("input")
-    { address, description, id, image, name, status }: UpsertLocationInput,
+    {
+      address,
+      description,
+      id,
+      contactInformations,
+      name,
+      images,
+      isActive,
+      lat,
+      long,
+      thumbnail,
+    }: UpsertLocationInput,
     @Ctx() { user }: Context
   ): Promise<LocationResponse> {
     try {
@@ -108,13 +120,41 @@ export class LocationResolver {
           if (name) existingLocation.name = name;
           if (address) existingLocation.address = address;
           if (description) existingLocation.description = description;
-          if (image) existingLocation.image = image;
+          if (images) existingLocation.images = images;
+          if (thumbnail) existingLocation.thumbnail = thumbnail;
+          if (lat) existingLocation.lat = lat;
+          if (long) existingLocation.long = long;
           if (
-            status !== undefined &&
-            status !== null &&
+            isActive !== undefined &&
+            isActive !== null &&
             user?.role === USER_ROLE.SuperAdmin
           )
-            existingLocation.status = status;
+            existingLocation.isActive = isActive;
+          if (contactInformations) {
+            contactInformations.forEach(async (contactInformation) => {
+              if (contactInformation.id) {
+                const foundContact = await ContactInformation.findOne({
+                  where: { id },
+                });
+                if (!foundContact)
+                  throw new Error("Contact Information Not Found");
+                if (contactInformation.address)
+                  foundContact.address = contactInformation.address;
+                if (contactInformation.email)
+                  foundContact.email = contactInformation.email;
+                if (contactInformation.name)
+                  foundContact.name = contactInformation.name;
+                if (contactInformation.phoneNumber)
+                  foundContact.phoneNumber = contactInformation.phoneNumber;
+              } else {
+                const newContactInformation = await ContactInformation.create({
+                  ...contactInformation,
+                  locationId: existingLocation.id,
+                });
+                await newContactInformation.save();
+              }
+            });
+          }
 
           return {
             message: "Update Location successfully",
@@ -133,12 +173,27 @@ export class LocationResolver {
           const newLocation = await Location.create({
             address,
             name,
+            description,
+            images,
+            thumbnail,
+            lat,
+            long,
           });
 
           if (description) newLocation.description = description;
-          if (image) newLocation.image = image;
-          if (status !== undefined && status !== null)
-            newLocation.status = status;
+          if (images) newLocation.images = images;
+          if (isActive !== undefined && isActive !== null)
+            newLocation.isActive = isActive;
+
+          if (contactInformations) {
+            contactInformations.forEach(async (contactInformation) => {
+              const newContactInformation = await ContactInformation.create({
+                ...contactInformation,
+                locationId: newLocation.id,
+              });
+              await newContactInformation.save();
+            });
+          }
 
           return {
             message: "Create Location successfully",
@@ -156,14 +211,14 @@ export class LocationResolver {
   @Mutation((_returns) => LocationResponse)
   @UseMiddleware(authMiddleware)
   async updateLocationStatus(
-    @Arg("input") { id, status }: UpdateLocationStatusInput,
-    @Ctx() { user }: Context
+    @Arg("input") { id, isActive }: UpdateLocationStatusInput,
+    @Ctx() { user: currentUser }: Context
   ): Promise<LocationResponse> {
     try {
-      if (user?.role === USER_ROLE.SuperAdmin) {
+      if (currentUser?.role === USER_ROLE.SuperAdmin) {
         const existingLocation = await Location.findOne({ where: { id } });
         if (!existingLocation) throw new Error("Location Not Found.");
-        existingLocation.status = status;
+        existingLocation.isActive = isActive;
 
         return {
           message: "Update location's status successfully",

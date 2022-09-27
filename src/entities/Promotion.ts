@@ -60,9 +60,9 @@ export class Promotion extends BaseEntity {
   @OneToMany(() => Reservation, (reservation) => reservation.promotion)
   reservations?: Reservation[];
 
-  @Field((_type) => Location, { nullable: true })
-  @ManyToOne(() => Location, (location) => location.promotions)
-  location?: Location;
+  // @Field((_type) => Location, { nullable: true })
+  // @ManyToOne(() => Location, (location) => location.promotions)
+  // location?: Location;
 
   @Field()
   @CreateDateColumn({ type: "timestamptz" })

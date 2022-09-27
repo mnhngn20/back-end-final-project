@@ -18,11 +18,9 @@ import {
   GetUsersInput,
   CreateUserInput,
   ChangeUserStatusInput,
-  ChangeUserRoleInput,
   UpdateUserInput,
   ResetPasswordConfirmInput,
   ResetPasswordResponse,
-  SendNotificationInput,
 } from "../types/user";
 import {
   RegisterLoginInput,
@@ -40,10 +38,10 @@ import {
 } from "../types/Errors";
 import { createResetPasswordToken, createToken } from "../utils/user/token";
 import { authMiddleware } from "../middlewares/auth-middleware";
-import { USER_ROLE } from "../constants";
+import { ROOM_STATUS, USER_ROLE } from "../constants";
 import { ILike } from "typeorm";
 import { sendEmail } from "../utils/user/mailer";
-import NotificationHelper from "../utils/common/notificationHelper";
+import { Room } from "../entities";
 
 @Resolver()
 export class UserResolver {
@@ -65,6 +63,7 @@ export class UserResolver {
       const hashedPassword = await argon2.hash(password);
 
       const newUser = User.create({
+        ...registerInput,
         email,
         password: hashedPassword,
       });
@@ -183,29 +182,6 @@ export class UserResolver {
     }
   }
 
-  @Mutation((_return) => UserResponse)
-  @UseMiddleware(authMiddleware)
-  async updateFirebaseToken(
-    @Arg("token") token: string,
-    @Ctx() { user }: Context
-  ): Promise<UserResponse | null> {
-    try {
-      const existingUser = await User.findOne({
-        where: { id: user?.id },
-      });
-      if (!existingUser) throw new Error("User Not Found");
-
-      existingUser.firebaseToken = token;
-
-      return {
-        message: "Update firebase token successfully",
-        user: await existingUser.save(),
-      };
-    } catch (error) {
-      throw new Error(error);
-    }
-  }
-
   // SECTION: MY PROFILE
   @Query((_return) => UserResponse)
   @UseMiddleware(authMiddleware)
@@ -214,15 +190,12 @@ export class UserResolver {
       if (!user?.id) throw new Error(InternalServerError);
 
       const existingUser = await User.findOne({
-        relations: [
-          "location",
-          "reservations",
-          "reservationsCreatedForCustomer",
-        ],
+        relations: ["location", "room"],
         where: { id: user?.id },
       });
 
       if (!existingUser) throw new Error(UserNotFoundError);
+
       return {
         message: "Get profile successfully",
         user: existingUser,
@@ -236,7 +209,7 @@ export class UserResolver {
   @UseMiddleware(authMiddleware)
   async updateMe(
     @Arg("input")
-    { avatar, identityNumber, dob, fullName, phoneNumber }: UpdateMeInput,
+    { avatar, identityNumber, phoneNumber, dateOfBirth, name }: UpdateMeInput,
     @Ctx() { user }: Context
   ): Promise<UserResponse> {
     try {
@@ -252,11 +225,11 @@ export class UserResolver {
       });
 
       if (existingUser) {
-        if (fullName) existingUser.fullName = fullName;
+        if (name) existingUser.name = name;
         if (avatar) existingUser.avatar = avatar;
         if (identityNumber) existingUser.identityNumber = identityNumber;
         if (phoneNumber) existingUser.phoneNumber = phoneNumber;
-        if (dob) existingUser.dob = dob;
+        if (dateOfBirth) existingUser.dateOfBirth = dateOfBirth;
 
         await existingUser.save();
 
@@ -300,51 +273,26 @@ export class UserResolver {
     }
   }
 
-  @Mutation((_return) => String)
-  @UseMiddleware(authMiddleware)
-  async deposit(
-    @Arg("amount") amount: number,
-    @Ctx() { user }: Context
-  ): Promise<String> {
-    try {
-      if (!user?.id) throw new Error(InternalServerError);
-
-      if (amount <= 0) throw new Error(InvalidInputError);
-
-      const targetUser = await User.findOne({ where: { id: user.id } });
-      if (targetUser) {
-        targetUser.balance = targetUser.balance + amount;
-      } else throw new Error(UserNotFoundError);
-      await targetUser?.save();
-      return "Deposit successfully";
-    } catch (err) {
-      throw new Error(err);
-    }
-  }
-
   //SECTION: MANAGE USERS
   @Query((_return) => UserResponse)
   @UseMiddleware(authMiddleware)
   async getUser(
     @Arg("id") id: number,
-    @Ctx() { user }: Context
+    @Ctx() { user: currentUser }: Context
   ): Promise<UserResponse | null> {
     try {
-      if (!user?.id) throw new Error(InternalServerError);
+      if (!currentUser?.id) throw new Error(InternalServerError);
 
-      if (user.role === USER_ROLE.Customer)
+      if (currentUser.role === USER_ROLE.Customer)
         throw new Error(PermissionDeniedError);
 
       const existingUser = await User.findOne({
-        relations: [
-          "location",
-          "reservations",
-          "reservationsCreatedForCustomer",
-        ],
-        where: { id: id },
+        relations: ["location", "room"],
+        where: { id },
       });
 
       if (!existingUser) throw new Error(UserNotFoundError);
+
       return {
         message: "Get user successfully",
         user: existingUser,
@@ -362,26 +310,28 @@ export class UserResolver {
       page,
       limit,
       email,
-      fullName,
+      name,
       isActive,
       locationId,
       role,
       orderBy,
+      roomId,
     }: GetUsersInput,
-    @Ctx() { user }: Context
+    @Ctx() { user: currentUser }: Context
   ): Promise<ListUserResponse | null> {
     try {
-      if (!user?.id) throw new Error(InternalServerError);
+      if (!currentUser?.id) throw new Error(InternalServerError);
 
-      if (user.role === USER_ROLE.Customer)
+      if (currentUser.role === USER_ROLE.Customer)
         throw new Error(PermissionDeniedError);
 
       let options = {
         email: ILike("%" + email + "%"),
-        ...(fullName && { fullName: ILike("%" + fullName + "%") }),
+        ...(name && { fullName: ILike("%" + name + "%") }),
         ...(role && { role }),
         ...(isActive !== undefined && isActive !== null && { isActive }),
         ...(locationId && { locationId }),
+        ...(roomId && { roomId }),
       };
 
       const [result, total] = await User.findAndCount({
@@ -389,11 +339,7 @@ export class UserResolver {
         order: { createdAt: orderBy },
         take: limit,
         skip: (page - 1) * limit,
-        relations: [
-          "location",
-          "reservations",
-          "reservationsCreatedForCustomer",
-        ],
+        relations: ["location", "room"],
       });
 
       const totalPages = Math.ceil(total / limit);
@@ -419,20 +365,21 @@ export class UserResolver {
     {
       email,
       password,
-      fullName,
       avatar,
-      dob,
       identityNumber,
       locationId,
       phoneNumber,
-      role,
+      address,
+      dateOfBirth,
+      name,
+      roomId,
     }: CreateUserInput,
-    @Ctx() { user }: Context
+    @Ctx() { user: currentUser }: Context
   ): Promise<UserResponse | null> {
     try {
-      if (!user?.id) throw new Error(InternalServerError);
+      if (!currentUser?.id) throw new Error(InternalServerError);
 
-      if (user.role === USER_ROLE.Customer)
+      if (currentUser.role === USER_ROLE.Customer)
         throw new Error(PermissionDeniedError);
 
       const existingUser = await User.findOne({ where: { email } });
@@ -443,21 +390,25 @@ export class UserResolver {
         email,
         password: hashedPassword,
       });
-      if (user.role === USER_ROLE.SuperAdmin) {
-        if (locationId) newUser.locationId = locationId;
-        if (role) newUser.role = role;
-      } else if (user.role === USER_ROLE.Admin) {
-        if (role === USER_ROLE.SuperAdmin)
-          throw new Error(PermissionDeniedError);
-        if (role) newUser.role = role;
 
-        if (role !== USER_ROLE.Customer) {
-          newUser.locationId = user.locationId;
-        }
+      if (currentUser.role === USER_ROLE.SuperAdmin) {
+        if (locationId) newUser.locationId = locationId;
+        newUser.role = USER_ROLE.Admin;
+      } else if (currentUser.role === USER_ROLE.Admin) {
+        newUser.role = USER_ROLE.Customer;
+        newUser.locationId = currentUser.locationId;
       }
-      if (fullName) newUser.fullName = fullName;
+      if (name) newUser.name = name;
       if (avatar) newUser.avatar = avatar;
-      if (dob) newUser.dob = dob;
+      if (dateOfBirth) newUser.dateOfBirth = dateOfBirth;
+      if (address) newUser.address = address;
+      if (roomId) {
+        const room = await Room.findOne({ where: { id: roomId } });
+        if (!room) throw new Error("Room not found");
+        newUser.roomId = roomId;
+        room.status = ROOM_STATUS.Owned;
+        room.save();
+      }
       if (identityNumber) newUser.identityNumber = identityNumber;
       if (phoneNumber) newUser.phoneNumber = phoneNumber;
 
@@ -475,34 +426,56 @@ export class UserResolver {
   @UseMiddleware(authMiddleware)
   async updateUser(
     @Arg("input")
-    { id, fullName, avatar, dob, identityNumber, phoneNumber }: UpdateUserInput,
-    @Ctx() { user }: Context
+    {
+      id,
+      avatar,
+      identityNumber,
+      phoneNumber,
+      dateOfBirth,
+      name,
+      roomId,
+    }: UpdateUserInput,
+    @Ctx() { user: currentUser }: Context
   ): Promise<UserResponse | null> {
     try {
-      if (!user?.id) throw new Error(InternalServerError);
+      if (!currentUser?.id) throw new Error(InternalServerError);
 
-      if (user.role === USER_ROLE.Customer)
+      if (currentUser.role === USER_ROLE.Customer)
         throw new Error(PermissionDeniedError);
 
-      const customer = await User.findOne({
+      const foundUser = await User.findOne({
         where: { id: id },
       });
-      if (!customer) throw new Error(UserNotFoundError);
+      if (!foundUser) throw new Error(UserNotFoundError);
       if (
-        customer.role !== USER_ROLE.Customer &&
-        user.role !== USER_ROLE.SuperAdmin
+        foundUser.role === USER_ROLE.Customer &&
+        currentUser.role !== USER_ROLE.Admin
       )
         throw new Error(PermissionDeniedError);
 
-      if (fullName) customer.fullName = fullName;
-      if (avatar) customer.avatar = avatar;
-      if (dob) customer.dob = dob;
-      if (identityNumber) customer.identityNumber = identityNumber;
-      if (phoneNumber) customer.phoneNumber = phoneNumber;
+      if (
+        foundUser.role === USER_ROLE.Admin &&
+        currentUser.role !== USER_ROLE.SuperAdmin
+      )
+        throw new Error(PermissionDeniedError);
+
+      if (name) foundUser.name = name;
+      if (avatar) foundUser.avatar = avatar;
+      if (dateOfBirth) foundUser.dateOfBirth = dateOfBirth;
+      if (identityNumber) foundUser.identityNumber = identityNumber;
+      if (phoneNumber) foundUser.phoneNumber = phoneNumber;
+
+      if (roomId) {
+        const room = await Room.findOne({ where: { id: roomId } });
+        if (!room) throw new Error("Room not found");
+        foundUser.roomId = roomId;
+        room.status = ROOM_STATUS.Owned;
+        room.save();
+      }
 
       return {
         message: "Update User Successfully",
-        user: await customer?.save(),
+        user: await foundUser?.save(),
       };
     } catch (err) {
       console.error(err);
@@ -534,69 +507,6 @@ export class UserResolver {
 
       await targetUser?.save();
       return "Change User Status Successfully";
-    } catch (err) {
-      console.error(err);
-      throw new Error(err);
-    }
-  }
-
-  @Mutation((_return) => String)
-  @UseMiddleware(authMiddleware)
-  async changeUserRole(
-    @Arg("input")
-    { id, role }: ChangeUserRoleInput,
-    @Ctx() { user }: Context
-  ): Promise<String | null> {
-    try {
-      if (!user?.id) throw new Error(InternalServerError);
-
-      const targetUser = await User.findOne({
-        where: { id: id },
-      });
-      if (!targetUser) throw new Error(UserNotFoundError);
-      if (
-        user.role === USER_ROLE.SuperAdmin ||
-        (user.role === USER_ROLE.Admin &&
-          targetUser?.locationId === user.locationId &&
-          (role === USER_ROLE.Admin || role === USER_ROLE.Employee))
-      ) {
-        targetUser.role = role;
-      } else throw new Error(PermissionDeniedError);
-
-      await targetUser?.save();
-      return "Change User Status Successfully";
-    } catch (err) {
-      console.error(err);
-      throw new Error(err);
-    }
-  }
-
-  @Query((_return) => String)
-  @UseMiddleware(authMiddleware)
-  async sendNotification(
-    @Arg("input")
-    { uid, title, content, data }: SendNotificationInput,
-    @Ctx() { user }: Context
-  ): Promise<String | null> {
-    try {
-      if (user?.role !== USER_ROLE.SuperAdmin)
-        throw new Error(PermissionDeniedError);
-      const targetUser = await User.findOne({
-        where: { id: uid },
-      });
-      if (!targetUser) throw new Error(UserNotFoundError);
-      if (!targetUser.firebaseToken)
-        throw new Error("User doesn't have firebase token");
-
-      NotificationHelper.sendToDevice(targetUser.firebaseToken, {
-        notification: {
-          title: title,
-          body: content,
-        },
-        ...(data && { data: JSON.parse(data) }),
-      });
-
-      return "Send Notification Successfully";
     } catch (err) {
       console.error(err);
       throw new Error(err);

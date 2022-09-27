@@ -8,7 +8,6 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from "typeorm";
-import { EquipmentType } from "./EquipmentType";
 import { Room } from "./Room";
 
 @ObjectType()
@@ -16,7 +15,7 @@ import { Room } from "./Room";
 export class Equipment extends BaseEntity {
   @Field((_type) => ID)
   @PrimaryGeneratedColumn()
-  id!: number;
+  id: number;
 
   @Field()
   @Column()
@@ -24,11 +23,11 @@ export class Equipment extends BaseEntity {
 
   @Field()
   @Column()
-  name!: string;
+  name: string;
 
-  @Field()
-  @Column()
-  equipmentTypeId!: number;
+  @Field({ nullable: true })
+  @Column({ nullable: true })
+  description?: string;
 
   @Field({ nullable: true })
   @Column({ nullable: true })
@@ -36,15 +35,11 @@ export class Equipment extends BaseEntity {
 
   @Field()
   @Column()
-  status!: boolean;
+  status: string;
 
   @Field((_type) => Room)
   @ManyToOne(() => Room, (room) => room.equipments)
-  room!: Room;
-
-  @Field((_type) => EquipmentType)
-  @ManyToOne(() => EquipmentType, (equipmentType) => equipmentType.equipments)
-  equipmentType!: EquipmentType;
+  room: Room;
 
   @Field()
   @CreateDateColumn({ type: "timestamptz" })

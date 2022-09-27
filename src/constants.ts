@@ -3,6 +3,12 @@ import { registerEnumType } from "type-graphql";
 export const COOKIE_NAME = "cb-cspace-cookie";
 export const __prod__ = process.env.NODE_ENV === "production";
 
+export enum ROOM_STATUS {
+  Owned = "Owned",
+  Available = "Available",
+  NotAvailable = "Not Available",
+}
+
 export enum RESERVATION_STATUS {
   Paid = "Paid",
   Unpaid = "Unpaid",
@@ -27,12 +33,14 @@ export enum PAYMENT_METHOD {
 export enum USER_ROLE {
   SuperAdmin = "SuperAdmin",
   Admin = "Admin",
-  Employee = "Employee",
   Customer = "Customer",
 }
 
 registerEnumType(ORDER_BY, {
   name: "ORDER_BY",
+});
+registerEnumType(ROOM_STATUS, {
+  name: "ROOM_STATUS",
 });
 registerEnumType(USER_ROLE, {
   name: "USER_ROLE",

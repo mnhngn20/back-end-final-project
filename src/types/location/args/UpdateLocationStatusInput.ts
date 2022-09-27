@@ -6,5 +6,5 @@ export class UpdateLocationStatusInput {
   id: number;
 
   @Field()
-  status: boolean;
+  isActive: boolean;
 }

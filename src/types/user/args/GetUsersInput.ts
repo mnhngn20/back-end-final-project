@@ -16,10 +16,13 @@ export class GetUsersInput {
   email?: string = "";
 
   @Field({ nullable: true })
-  fullName?: string;
+  name?: string;
 
   @Field({ nullable: true })
   locationId?: number;
+
+  @Field({ nullable: true })
+  roomId?: number;
 
   @Field({ nullable: true })
   isActive?: boolean;
