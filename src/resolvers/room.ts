@@ -14,7 +14,6 @@ import {
   OutOfBoundsError,
   PermissionDeniedError,
   RoomNotFoundError,
-  RoomTypeNotFoundError,
 } from "../types/Errors";
 import { Context } from "../types/Context";
 import { authMiddleware } from "../middlewares/auth-middleware";
@@ -26,7 +25,7 @@ import {
 } from "../types/room";
 import { LessThanOrEqual, ILike, MoreThanOrEqual } from "typeorm";
 import { USER_ROLE } from "../constants";
-import { Location, RoomType } from "../entities";
+import { Location } from "../entities";
 
 @Resolver()
 export class RoomResolver {
@@ -40,7 +39,7 @@ export class RoomResolver {
       if (!user?.id) throw new Error(InternalServerError);
       const existingRoom = await Room.findOne({
         where: { id },
-        relations: ["location", "roomType", "equipments"],
+        relations: ["location", "equipments"],
       });
       if (!existingRoom) throw new Error(RoomNotFoundError);
       return {
@@ -60,14 +59,9 @@ export class RoomResolver {
       limit,
       page,
       orderBy,
-      floor,
-      keyword,
       name,
-      description,
       locationId,
-      roomTypeId,
       status,
-      minRate,
       minBasePrice,
       maxBasePrice,
     }: GetRoomsInput,
@@ -76,12 +70,8 @@ export class RoomResolver {
     try {
       if (!user?.id) throw new Error(InternalServerError);
 
-      let options;
-      const commonOptions = {
+      const options = {
         ...(status !== undefined && status !== null && { status }),
-        ...(floor && { floor }),
-        ...(minRate !== undefined &&
-          minRate !== null && { overallRate: MoreThanOrEqual(minRate) }),
         ...(minBasePrice !== undefined &&
           minBasePrice !== null && {
             basePrice: MoreThanOrEqual(minBasePrice),
@@ -91,33 +81,17 @@ export class RoomResolver {
             basePrice: LessThanOrEqual(maxBasePrice),
           }),
         ...(locationId && { locationId }),
-        ...(roomTypeId && { roomTypeId }),
+        ...(name && {
+          name: ILike(`%${name}%`),
+        }),
       };
-      if (keyword) {
-        options = [
-          {
-            name: ILike(`%${keyword}%`),
-            ...commonOptions,
-          },
-          {
-            description: ILike(`%${keyword}%`),
-            ...commonOptions,
-          },
-        ];
-      } else {
-        options = {
-          ...(name && { name: ILike(`%${name}%`) }),
-          ...(description && { description: ILike(`%${description}%`) }),
-          ...commonOptions,
-        };
-      }
 
       const [result, total] = await Room.findAndCount({
         where: options,
         order: { createdAt: orderBy },
         take: limit,
         skip: (page - 1) * limit,
-        relations: ["location", "roomType"],
+        relations: ["location", "equipments"],
       });
 
       const totalPages = Math.ceil(total / limit);
@@ -140,78 +114,45 @@ export class RoomResolver {
   @UseMiddleware(authMiddleware)
   async upsertRoom(
     @Arg("input")
-    {
-      id,
-      name,
-      description,
-      locationId,
-      basePrice,
-      floor,
-      capacity,
-      image,
-      status,
-      roomTypeId,
-    }: UpsertRoomInput,
+    upsertRoomInput: UpsertRoomInput,
     @Ctx() { user }: Context
   ): Promise<RoomResponse> {
+    const { id, locationId, ...rest } = upsertRoomInput;
     try {
       if (!user?.id) throw new Error(InternalServerError);
       if (user.role !== USER_ROLE.Admin && user.role !== USER_ROLE.SuperAdmin)
         throw new Error(PermissionDeniedError);
 
-      let room;
       if (id) {
         // UPDATE Room
-        room = await Room.findOne({
+        const existingRoom = await Room.findOne({
           where: { id },
-          relations: ["location", "roomType"],
+          relations: ["location"],
         });
-        if (!room) throw new Error(RoomNotFoundError);
+        if (!existingRoom) throw new Error(RoomNotFoundError);
 
         if (
           user.role === USER_ROLE.Admin &&
-          user.locationId !== room.locationId
+          user.locationId !== existingRoom.locationId
         )
           throw new Error(PermissionDeniedError);
 
-        if (name) room.name = name;
-        if (description) room.description = description;
+        Room.merge(existingRoom, { ...rest });
 
         if (locationId && user.role === USER_ROLE.SuperAdmin) {
           const location = await Location.findOne({
             where: { id: locationId },
           });
           if (!location) throw new Error(LocationNotFoundError);
-          room.locationId = locationId;
+          existingRoom.locationId = locationId;
         }
 
-        if (basePrice) room.basePrice = basePrice;
-        if (floor) room.floor = floor;
-        if (capacity !== undefined && capacity !== null)
-          room.capacity = capacity;
-        if (image) room.image = image;
-        if (status !== undefined && status !== null) room.status = status;
-
-        if (roomTypeId) {
-          const roomType = await RoomType.findOne({
-            where: { id: roomTypeId },
-          });
-          if (
-            !roomType ||
-            (roomType.locationId !== room.locationId && roomType.locationId)
-          )
-            throw new Error(RoomTypeNotFoundError);
-          room.roomTypeId = roomTypeId;
-        }
+        return {
+          message: "Upsert Room successfully",
+          room: await existingRoom.save(),
+        };
       } else {
         // CREATE Room
-        if (
-          roomTypeId === undefined ||
-          floor === undefined ||
-          basePrice === undefined
-        )
-          throw new Error(InvalidInputError);
-
         if (user.role === USER_ROLE.SuperAdmin && locationId === undefined)
           throw new Error(InvalidInputError);
 
@@ -223,32 +164,16 @@ export class RoomResolver {
         });
         if (!location) throw new Error(LocationNotFoundError);
 
-        const roomType = await RoomType.findOne({
-          where: { id: roomTypeId },
-        });
-        if (!roomType) throw new Error(RoomTypeNotFoundError);
-        if (
-          roomType.locationId !== newRoomLocationId &&
-          roomType.locationId !== null
-        )
-          throw new Error(InvalidInputError);
-
-        room = await Room.create({
+        const newRoom = await Room.create({
+          ...rest,
           locationId: newRoomLocationId,
-          roomTypeId,
-          name,
-          description,
-          basePrice,
-          floor,
-          capacity,
-          image,
         });
-      }
 
-      return {
-        message: "Upsert Room successfully",
-        room: await room.save(),
-      };
+        return {
+          message: "Upsert Room successfully",
+          room: await newRoom.save(),
+        };
+      }
     } catch (error) {
       throw new Error(error);
     }

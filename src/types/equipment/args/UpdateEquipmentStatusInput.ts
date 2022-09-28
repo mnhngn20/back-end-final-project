@@ -6,5 +6,5 @@ export class UpdateEquipmentStatusInput {
   id: number;
 
   @Field()
-  status: boolean = true;
+  isActive: boolean = true;
 }

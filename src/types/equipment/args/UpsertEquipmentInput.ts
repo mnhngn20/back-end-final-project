@@ -18,5 +18,5 @@ export class UpsertEquipmentInput {
   image?: String;
 
   @Field({ nullable: true })
-  status?: boolean = true;
+  isActive?: boolean = true;
 }

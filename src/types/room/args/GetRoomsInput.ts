@@ -1,5 +1,5 @@
 import { Field, InputType } from "type-graphql";
-import { ORDER_BY } from "../../../constants";
+import { ORDER_BY, ROOM_STATUS } from "../../../constants";
 
 @InputType()
 export class GetRoomsInput {
@@ -10,28 +10,13 @@ export class GetRoomsInput {
   limit: number = 10;
 
   @Field({ nullable: true })
-  roomTypeId?: number;
-
-  @Field({ nullable: true })
   locationId?: number;
 
-  @Field({ nullable: true })
-  keyword?: String;
+  @Field(() => ROOM_STATUS, { nullable: true })
+  status?: ROOM_STATUS;
 
   @Field({ nullable: true })
-  name?: String;
-
-  @Field({ nullable: true })
-  description?: String;
-
-  @Field({ nullable: true })
-  floor?: number;
-
-  @Field({ nullable: true })
-  minRate?: number;
-
-  @Field({ nullable: true })
-  status?: boolean;
+  name?: string;
 
   @Field({ nullable: true })
   minBasePrice?: number;

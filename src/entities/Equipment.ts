@@ -8,6 +8,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from "typeorm";
+import { Location } from "./Location";
 import { Room } from "./Room";
 
 @ObjectType()
@@ -23,6 +24,10 @@ export class Equipment extends BaseEntity {
 
   @Field()
   @Column()
+  locationId: number;
+
+  @Field()
+  @Column()
   name: string;
 
   @Field({ nullable: true })
@@ -35,11 +40,15 @@ export class Equipment extends BaseEntity {
 
   @Field()
   @Column()
-  status: string;
+  isActive: boolean;
 
   @Field((_type) => Room)
   @ManyToOne(() => Room, (room) => room.equipments)
   room: Room;
+
+  @Field((_type) => Location)
+  @ManyToOne(() => Location, (location) => location.equipments)
+  location: Location;
 
   @Field()
   @CreateDateColumn({ type: "timestamptz" })

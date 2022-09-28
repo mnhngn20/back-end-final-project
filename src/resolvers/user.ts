@@ -209,7 +209,7 @@ export class UserResolver {
   @UseMiddleware(authMiddleware)
   async updateMe(
     @Arg("input")
-    { avatar, identityNumber, phoneNumber, dateOfBirth, name }: UpdateMeInput,
+    updateMeInput: UpdateMeInput,
     @Ctx() { user }: Context
   ): Promise<UserResponse> {
     try {
@@ -217,28 +217,18 @@ export class UserResolver {
 
       const existingUser = await User.findOne({
         where: { id: user?.id },
-        relations: [
-          "location",
-          "reservations",
-          "reservationsCreatedForCustomer",
-        ],
+        relations: ["location"],
       });
+      if (!existingUser) throw new Error(UserNotFoundError);
 
-      if (existingUser) {
-        if (name) existingUser.name = name;
-        if (avatar) existingUser.avatar = avatar;
-        if (identityNumber) existingUser.identityNumber = identityNumber;
-        if (phoneNumber) existingUser.phoneNumber = phoneNumber;
-        if (dateOfBirth) existingUser.dateOfBirth = dateOfBirth;
+      User.merge(existingUser, { ...updateMeInput });
 
-        await existingUser.save();
+      await existingUser.save();
 
-        return {
-          message: "Update profile successfully",
-          user: existingUser,
-        };
-      }
-      throw new Error(UserNotFoundError);
+      return {
+        message: "Update profile successfully",
+        user: existingUser,
+      };
     } catch (err) {
       throw new Error(err);
     }
@@ -362,21 +352,12 @@ export class UserResolver {
   @UseMiddleware(authMiddleware)
   async createUser(
     @Arg("input")
-    {
-      email,
-      password,
-      avatar,
-      identityNumber,
-      locationId,
-      phoneNumber,
-      address,
-      dateOfBirth,
-      name,
-      roomId,
-    }: CreateUserInput,
+    createUserInput: CreateUserInput,
     @Ctx() { user: currentUser }: Context
   ): Promise<UserResponse | null> {
     try {
+      const { email, password, locationId, roomId, ...rest } = createUserInput;
+
       if (!currentUser?.id) throw new Error(InternalServerError);
 
       if (currentUser.role === USER_ROLE.Customer)
@@ -389,6 +370,7 @@ export class UserResolver {
       const newUser = User.create({
         email,
         password: hashedPassword,
+        ...rest,
       });
 
       if (currentUser.role === USER_ROLE.SuperAdmin) {
@@ -398,10 +380,6 @@ export class UserResolver {
         newUser.role = USER_ROLE.Customer;
         newUser.locationId = currentUser.locationId;
       }
-      if (name) newUser.name = name;
-      if (avatar) newUser.avatar = avatar;
-      if (dateOfBirth) newUser.dateOfBirth = dateOfBirth;
-      if (address) newUser.address = address;
       if (roomId) {
         const room = await Room.findOne({ where: { id: roomId } });
         if (!room) throw new Error("Room not found");
@@ -409,8 +387,6 @@ export class UserResolver {
         room.status = ROOM_STATUS.Owned;
         room.save();
       }
-      if (identityNumber) newUser.identityNumber = identityNumber;
-      if (phoneNumber) newUser.phoneNumber = phoneNumber;
 
       return {
         message: "Create User Successfully",
@@ -426,25 +402,19 @@ export class UserResolver {
   @UseMiddleware(authMiddleware)
   async updateUser(
     @Arg("input")
-    {
-      id,
-      avatar,
-      identityNumber,
-      phoneNumber,
-      dateOfBirth,
-      name,
-      roomId,
-    }: UpdateUserInput,
+    updateUserInput: UpdateUserInput,
     @Ctx() { user: currentUser }: Context
   ): Promise<UserResponse | null> {
     try {
+      const { id, roomId, ...rest } = updateUserInput;
+
       if (!currentUser?.id) throw new Error(InternalServerError);
 
       if (currentUser.role === USER_ROLE.Customer)
         throw new Error(PermissionDeniedError);
 
       const foundUser = await User.findOne({
-        where: { id: id },
+        where: { id },
       });
       if (!foundUser) throw new Error(UserNotFoundError);
       if (
@@ -459,11 +429,7 @@ export class UserResolver {
       )
         throw new Error(PermissionDeniedError);
 
-      if (name) foundUser.name = name;
-      if (avatar) foundUser.avatar = avatar;
-      if (dateOfBirth) foundUser.dateOfBirth = dateOfBirth;
-      if (identityNumber) foundUser.identityNumber = identityNumber;
-      if (phoneNumber) foundUser.phoneNumber = phoneNumber;
+      User.merge(foundUser, { ...rest });
 
       if (roomId) {
         const room = await Room.findOne({ where: { id: roomId } });

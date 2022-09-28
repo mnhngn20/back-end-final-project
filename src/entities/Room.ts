@@ -26,9 +26,9 @@ export class Room extends BaseEntity {
   @Column({ nullable: true })
   name?: string;
 
-  // @Field()
-  // @Column()
-  // locationId!: number;
+  @Field()
+  @Column()
+  locationId: number;
 
   @Field({ nullable: true })
   @Column({ nullable: true })

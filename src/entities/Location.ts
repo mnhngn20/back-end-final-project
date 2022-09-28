@@ -11,6 +11,7 @@ import {
 import { User } from "./User";
 import { Room } from "./Room";
 import { ContactInformation } from "./ContactInformation";
+import { Equipment } from "./Equipment";
 
 @ObjectType()
 @Entity()
@@ -77,6 +78,10 @@ export class Location extends BaseEntity {
   @Field((_type) => [User], { nullable: true })
   @OneToMany(() => User, (user) => user.location)
   users: User[];
+
+  @Field((_type) => [Equipment], { nullable: true })
+  @OneToMany(() => Equipment, (equipment) => equipment.location)
+  equipments: Equipment[];
 
   @Field()
   @CreateDateColumn({ type: "timestamptz" })

@@ -13,14 +13,14 @@ export class GetEquipmentsInput {
   orderBy: ORDER_BY = ORDER_BY.ASC;
 
   @Field({ nullable: true })
-  equipmentTypeId?: number;
-
-  @Field({ nullable: true })
   name?: String;
 
   @Field({ nullable: true })
-  status?: boolean;
+  isActive?: boolean;
 
   @Field({ nullable: true })
   roomId?: number;
+
+  @Field({ nullable: true })
+  locationId?: number;
 }

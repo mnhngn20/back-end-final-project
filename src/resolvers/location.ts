@@ -91,20 +91,10 @@ export class LocationResolver {
   @UseMiddleware(authMiddleware)
   async upsertLocation(
     @Arg("input")
-    {
-      address,
-      description,
-      id,
-      contactInformations,
-      name,
-      images,
-      isActive,
-      lat,
-      long,
-      thumbnail,
-    }: UpsertLocationInput,
+    upsertLocationInput: UpsertLocationInput,
     @Ctx() { user }: Context
   ): Promise<LocationResponse> {
+    const { id, isActive, contactInformations, ...rest } = upsertLocationInput;
     try {
       if (id) {
         // UPDATE LOCATION
@@ -116,20 +106,14 @@ export class LocationResolver {
             where: { id },
           });
           if (!existingLocation) throw new Error("Location Not Found");
-
-          if (name) existingLocation.name = name;
-          if (address) existingLocation.address = address;
-          if (description) existingLocation.description = description;
-          if (images) existingLocation.images = images;
-          if (thumbnail) existingLocation.thumbnail = thumbnail;
-          if (lat) existingLocation.lat = lat;
-          if (long) existingLocation.long = long;
+          Location.merge(existingLocation, { ...rest });
           if (
             isActive !== undefined &&
             isActive !== null &&
             user?.role === USER_ROLE.SuperAdmin
           )
             existingLocation.isActive = isActive;
+
           if (contactInformations) {
             contactInformations.forEach(async (contactInformation) => {
               if (contactInformation.id) {
@@ -138,14 +122,9 @@ export class LocationResolver {
                 });
                 if (!foundContact)
                   throw new Error("Contact Information Not Found");
-                if (contactInformation.address)
-                  foundContact.address = contactInformation.address;
-                if (contactInformation.email)
-                  foundContact.email = contactInformation.email;
-                if (contactInformation.name)
-                  foundContact.name = contactInformation.name;
-                if (contactInformation.phoneNumber)
-                  foundContact.phoneNumber = contactInformation.phoneNumber;
+                ContactInformation.merge(foundContact, {
+                  ...contactInformation,
+                });
               } else {
                 const newContactInformation = await ContactInformation.create({
                   ...contactInformation,
@@ -166,24 +145,14 @@ export class LocationResolver {
       } else {
         // CREATE LOCATION
         if (user?.role === USER_ROLE.SuperAdmin) {
-          if (!name) throw new Error("Must include name when create Location!");
-          if (!address)
+          if (!upsertLocationInput?.name)
+            throw new Error("Must include name when create Location!");
+          if (!upsertLocationInput?.address)
             throw new Error("Must include address when create Location!");
 
           const newLocation = await Location.create({
-            address,
-            name,
-            description,
-            images,
-            thumbnail,
-            lat,
-            long,
+            ...upsertLocationInput,
           });
-
-          if (description) newLocation.description = description;
-          if (images) newLocation.images = images;
-          if (isActive !== undefined && isActive !== null)
-            newLocation.isActive = isActive;
 
           if (contactInformations) {
             contactInformations.forEach(async (contactInformation) => {
@@ -218,6 +187,7 @@ export class LocationResolver {
       if (currentUser?.role === USER_ROLE.SuperAdmin) {
         const existingLocation = await Location.findOne({ where: { id } });
         if (!existingLocation) throw new Error("Location Not Found.");
+
         existingLocation.isActive = isActive;
 
         return {

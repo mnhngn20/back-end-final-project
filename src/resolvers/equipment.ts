@@ -14,7 +14,7 @@ import {
   UpdateEquipmentStatusInput,
   UpsertEquipmentInput,
 } from "../types/equipment";
-import { Equipment, Room, EquipmentType } from "../entities";
+import { Equipment, Room } from "../entities";
 import { USER_ROLE } from "../constants";
 import {
   InternalServerError,
@@ -37,7 +37,7 @@ export class EquipmentResolver {
 
       const existingEquipment = await Equipment.findOne({
         where: { id },
-        relations: ["room", "equipmentType"],
+        relations: ["room"],
       });
 
       if (!existingEquipment) throw new Error("Equipment Not Found");
@@ -60,9 +60,9 @@ export class EquipmentResolver {
       page,
       orderBy,
       name,
-      status,
+      isActive,
       roomId,
-      equipmentTypeId,
+      locationId,
     }: GetEquipmentsInput,
     @Ctx() { user }: Context
   ): Promise<EquipmentListResponse> {
@@ -71,9 +71,9 @@ export class EquipmentResolver {
 
       let options = {
         ...(name && { name: ILike(`%${name}%`) }),
-        ...(status !== undefined && status !== null && { status }),
+        ...(isActive !== undefined && isActive !== null && { isActive }),
         ...(roomId && { roomId }),
-        ...(equipmentTypeId && { equipmentTypeId }),
+        ...(locationId && { locationId }),
       };
 
       const [result, total] = await Equipment.findAndCount({
@@ -81,7 +81,7 @@ export class EquipmentResolver {
         order: { createdAt: orderBy },
         take: limit,
         skip: (page - 1) * limit,
-        relations: ["equipmentType", "room"],
+        relations: ["room"],
       });
 
       const totalPages = Math.ceil(total / limit);
@@ -103,13 +103,13 @@ export class EquipmentResolver {
   @Mutation((_returns) => EquipmentResponse)
   @UseMiddleware(authMiddleware)
   async updateEquipmentStatus(
-    @Arg("input") { id, status }: UpdateEquipmentStatusInput,
+    @Arg("input") { id, isActive }: UpdateEquipmentStatusInput,
     @Ctx() { user }: Context
   ): Promise<EquipmentResponse> {
     try {
       const existingEquipment = await Equipment.findOne({
         where: { id },
-        relations: ["equipmentType", "room"],
+        relations: ["room"],
       });
 
       if (!existingEquipment) throw new Error("Equipment Not Found");
@@ -123,7 +123,8 @@ export class EquipmentResolver {
         (user?.role === USER_ROLE.Admin &&
           user?.locationId === existingRoom?.locationId)
       ) {
-        existingEquipment.status = status;
+        existingEquipment.isActive = isActive;
+
         return {
           message: "Update Equipment Status successfully",
           equipment: await existingEquipment.save(),
@@ -140,9 +141,10 @@ export class EquipmentResolver {
   @UseMiddleware(authMiddleware)
   async upsertEquipment(
     @Arg("input")
-    { name, roomId, equipmentTypeId, id, image, status }: UpsertEquipmentInput,
+    upsertEquipmentInput: UpsertEquipmentInput,
     @Ctx() { user }: Context
   ): Promise<EquipmentResponse> {
+    const { id, roomId, ...rest } = upsertEquipmentInput;
     try {
       const existingRoom = await Room.findOne({ where: { id: roomId } });
       if (!existingRoom) throw new Error("Room Not Found");
@@ -157,23 +159,11 @@ export class EquipmentResolver {
           const existingEquipment = await Equipment.findOne({ where: { id } });
           if (!existingEquipment) throw new Error("Equipment Not Found");
 
-          if (name) existingEquipment.name = name;
+          Equipment.merge(existingEquipment, { ...rest });
           if (roomId) {
             existingEquipment.roomId = roomId;
             existingEquipment.room = existingRoom;
           }
-          if (equipmentTypeId) {
-            const existingEquipmentType = await EquipmentType.findOne({
-              where: { id: equipmentTypeId },
-            });
-            if (!existingEquipmentType)
-              throw new Error("Equipment Type Not Found");
-            existingEquipment.equipmentTypeId = equipmentTypeId;
-            existingEquipment.equipmentType = existingEquipmentType;
-          }
-          if (image) existingEquipment.image = image;
-          if (status !== undefined && status !== null)
-            existingEquipment.status = status;
 
           return {
             message: "Update Equipment successfully",
@@ -181,28 +171,12 @@ export class EquipmentResolver {
           };
         } else {
           // CREATE EQUIPMENT SECTION
-          if (!equipmentTypeId)
-            throw new Error(
-              "Must include equipmentTypeId when create Equipment"
-            );
-
           const newEquipment = await Equipment.create({
-            name,
             roomId,
-            equipmentTypeId,
+            ...rest,
           });
-
-          const existingEquipmentType = await EquipmentType.findOne({
-            where: { id: equipmentTypeId },
-          });
-          if (!existingEquipmentType)
-            throw new Error("Equipment Type Not Found");
-          newEquipment.equipmentType = existingEquipmentType;
 
           if (roomId) newEquipment.room = existingRoom;
-          if (status !== undefined && status !== null)
-            newEquipment.status = status;
-          if (image) newEquipment.image = image;
 
           return {
             message: "Create Equipment successfully",
