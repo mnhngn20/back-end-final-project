@@ -9,7 +9,7 @@ export const createToken = (
   sign(
     {
       id: user.id,
-      fullName: user.fullName,
+      fullName: user.name,
       email: user.email,
       isActive: user.isActive,
       role: user.role,

@@ -1,11 +1,5 @@
+export { ContactInformation } from "./ContactInformation";
 export { Equipment } from "./Equipment";
-export { EquipmentType } from "./EquipmentType";
 export { Location } from "./Location";
-export { Plan } from "./Plan";
-export { Promotion } from "./Promotion";
-export { RentedPerDayByRoom } from "./RentedPerDayByRoom";
-export { Reservation } from "./Reservation";
-export { Review } from "./Review";
 export { Room } from "./Room";
-export { RoomType } from "./RoomType";
 export { User } from "./User";

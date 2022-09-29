@@ -11,28 +11,15 @@ import { Context } from "./types/Context";
 import cors from "cors";
 import {
   EquipmentResolver,
-  EquipmentTypeResolver,
   LocationResolver,
-  PlanResolver,
-  PromotionResolver,
-  ReservationResolver,
-  ReviewResolver,
   RoomResolver,
-  RoomTypeResolver,
   UserResolver,
-  ReportResolver,
 } from "./resolvers";
 import {
   Equipment,
-  EquipmentType,
   Location,
-  Plan,
-  Promotion,
-  RentedPerDayByRoom,
-  Reservation,
-  Review,
   Room,
-  RoomType,
+  ContactInformation,
   User,
 } from "./entities";
 import NotificationHelper from "./utils/common/notificationHelper";
@@ -46,19 +33,7 @@ const dataSource = new DataSource({
   // url: process.env.DB_URL_PROD,
   logging: false,
   synchronize: true,
-  entities: [
-    Equipment,
-    EquipmentType,
-    Location,
-    Plan,
-    Promotion,
-    RentedPerDayByRoom,
-    Reservation,
-    Review,
-    Room,
-    RoomType,
-    User,
-  ],
+  entities: [Equipment, Location, Room, ContactInformation, User],
 });
 
 const main = async () => {
@@ -97,16 +72,9 @@ const main = async () => {
     schema: await buildSchema({
       resolvers: [
         EquipmentResolver,
-        EquipmentTypeResolver,
         LocationResolver,
-        PlanResolver,
-        PromotionResolver,
-        ReservationResolver,
-        ReviewResolver,
         RoomResolver,
-        RoomTypeResolver,
         UserResolver,
-        ReportResolver,
       ],
       validate: false,
     }),
@@ -130,7 +98,7 @@ const main = async () => {
   // SECTION: START EXPRESS SERVER
   console.log(">>> Starting server...");
   const PORT = process.env.PORT || 4000;
-  const URL = `localhost:${PORT}${apolloServer.graphqlPath}`;
+  const URL = `http://localhost:${PORT}${apolloServer.graphqlPath}`;
   app.listen(PORT, () =>
     console.log(
       `   - Server started on port ${PORT}. GraphQL server started on ${URL}`

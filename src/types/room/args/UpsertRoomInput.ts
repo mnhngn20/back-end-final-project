@@ -1,4 +1,4 @@
-import { ROOM_STATUS } from "src/constants";
+import { ROOM_STATUS } from "../../../constants";
 import { Field, InputType } from "type-graphql";
 
 @InputType()
