@@ -54,3 +54,9 @@ registerEnumType(RESERVATION_STATUS, {
 registerEnumType(PAYMENT_METHOD, {
   name: "PAYMENT_METHOD",
 });
+
+export const PLATFORM = [
+  USER_ROLE.Admin,
+  USER_ROLE.Customer,
+  USER_ROLE.SuperAdmin,
+];
