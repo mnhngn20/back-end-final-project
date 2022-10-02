@@ -27,7 +27,10 @@ export class LocationResolver {
   @UseMiddleware(authMiddleware)
   async getLocation(@Arg("id") id: number): Promise<LocationResponse> {
     try {
-      const existingLocation = await Location.findOne({ where: { id } });
+      const existingLocation = await Location.findOne({
+        where: { id },
+        relations: ["contactInformations"],
+      });
       if (!existingLocation) throw new Error("Location Not Found");
       return {
         message: "Get Location successfully",
@@ -42,33 +45,20 @@ export class LocationResolver {
   @UseMiddleware(authMiddleware)
   async getLocations(
     @Arg("input")
-    { address, name, status, limit, orderBy, page, keyword }: GetLocationsInput
+    { address, name, isActive, limit, orderBy, page }: GetLocationsInput
   ): Promise<LocationListResponse> {
     try {
-      let options;
-      if (keyword) {
-        options = [
-          {
-            ...(status !== undefined && { status }),
-            name: ILike(`%${keyword}%`),
-          },
-          {
-            ...(status !== undefined && { status }),
-            address: ILike(`%${keyword}%`),
-          },
-        ];
-      } else {
-        options = {
-          ...(address && { address: ILike(`%${address}%`) }),
-          ...(name && { name: ILike(`%${name}%`) }),
-          ...(status !== undefined && { status }),
-        };
-      }
+      const options = {
+        ...(address && { address: ILike(`%${address}%`) }),
+        ...(name && { name: ILike(`%${name}%`) }),
+        ...(isActive !== undefined && { isActive }),
+      };
       const [result, total] = await Location.findAndCount({
         where: options,
         order: { createdAt: orderBy },
         take: limit,
         skip: (page - 1) * limit,
+        relations: ["contactInformations"],
       });
 
       const totalPages = Math.ceil(total / limit);
@@ -106,7 +96,9 @@ export class LocationResolver {
             where: { id },
           });
           if (!existingLocation) throw new Error("Location Not Found");
+
           Location.merge(existingLocation, { ...rest });
+
           if (
             isActive !== undefined &&
             isActive !== null &&
@@ -114,17 +106,23 @@ export class LocationResolver {
           )
             existingLocation.isActive = isActive;
 
+          const locationContactInformations = await ContactInformation.find({
+            where: { locationId: existingLocation?.id },
+          });
+
           if (contactInformations) {
             contactInformations.forEach(async (contactInformation) => {
               if (contactInformation.id) {
                 const foundContact = await ContactInformation.findOne({
-                  where: { id },
+                  where: { id: contactInformation.id },
                 });
                 if (!foundContact)
                   throw new Error("Contact Information Not Found");
+
                 ContactInformation.merge(foundContact, {
                   ...contactInformation,
                 });
+                await foundContact.save();
               } else {
                 const newContactInformation = await ContactInformation.create({
                   ...contactInformation,
@@ -133,6 +131,19 @@ export class LocationResolver {
                 await newContactInformation.save();
               }
             });
+            locationContactInformations?.forEach(
+              async (locationContactInformation) => {
+                if (
+                  !contactInformations?.some(
+                    (item) => item?.id === locationContactInformation.id
+                  )
+                ) {
+                  await ContactInformation.delete(
+                    locationContactInformation.id
+                  );
+                }
+              }
+            );
           }
 
           return {
@@ -154,6 +165,8 @@ export class LocationResolver {
             ...upsertLocationInput,
           });
 
+          await newLocation.save();
+
           if (contactInformations) {
             contactInformations.forEach(async (contactInformation) => {
               const newContactInformation = await ContactInformation.create({
@@ -166,7 +179,7 @@ export class LocationResolver {
 
           return {
             message: "Create Location successfully",
-            location: await newLocation.save(),
+            location: newLocation,
           };
         } else {
           throw new Error(PermissionDeniedError);

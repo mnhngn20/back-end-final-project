@@ -28,13 +28,13 @@ export class Location extends BaseEntity {
   @Column()
   address: string;
 
-  @Field()
-  @Column()
-  long: number;
+  @Field({ nullable: true })
+  @Column({ type: "real", nullable: true })
+  long?: number;
 
-  @Field()
-  @Column()
-  lat: number;
+  @Field({ nullable: true })
+  @Column({ type: "real", nullable: true })
+  lat?: number;
 
   @Field({ nullable: true })
   @Column({ nullable: true })
@@ -48,6 +48,10 @@ export class Location extends BaseEntity {
   @Column({ nullable: true })
   description?: string;
 
+  @Field({ nullable: true })
+  @Column({ nullable: true })
+  numOfFloor?: number;
+
   @Field()
   @Column()
   income: number = 0;
@@ -55,14 +59,6 @@ export class Location extends BaseEntity {
   @Field()
   @Column()
   isActive: boolean = true;
-
-  // @Field((_type) => [Reservation], { nullable: true })
-  // @OneToMany(() => Reservation, (reservation) => reservation.location)
-  // reservations: Reservation[];
-
-  // @Field((_type) => [Promotion], { nullable: true })
-  // @OneToMany(() => Promotion, (promotion) => promotion.location)
-  // promotions: Promotion[];
 
   @Field((_type) => [Room], { nullable: true })
   @OneToMany(() => Room, (room) => room.location)
@@ -76,8 +72,8 @@ export class Location extends BaseEntity {
   contactInformations: ContactInformation[];
 
   @Field((_type) => [User], { nullable: true })
-  @OneToMany(() => User, (user) => user.location)
-  users: User[];
+  @OneToMany(() => User, (user) => user.location, { nullable: true })
+  users?: User[];
 
   @Field((_type) => [Equipment], { nullable: true })
   @OneToMany(() => Equipment, (equipment) => equipment.location)

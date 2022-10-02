@@ -4,6 +4,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
   ManyToOne,
   OneToOne,
   PrimaryGeneratedColumn,
@@ -60,14 +61,6 @@ export class User extends BaseEntity {
   @Column({ nullable: true })
   isActive?: boolean = true;
 
-  @Field({ nullable: true })
-  @Column({ nullable: true })
-  locationId?: number;
-
-  @Field({ nullable: true })
-  @Column({ nullable: true })
-  roomId?: number;
-
   @Column()
   password: string;
 
@@ -75,13 +68,18 @@ export class User extends BaseEntity {
   @ManyToOne(() => Location, (location) => location.users)
   location?: Location;
 
-  @Field((_type) => Room, { nullable: true })
-  @OneToOne(() => Room, (room) => room.user, { nullable: true })
-  room?: Location;
+  @Field({ nullable: true })
+  @Column({ nullable: true })
+  locationId?: number;
 
-  // @Field((_type) => [Reservation], { nullable: true })
-  // @OneToMany(() => Reservation, (reservation) => reservation.user)
-  // reservations: Reservation[];
+  @Field((_type) => Room, { nullable: true })
+  @OneToOne(() => Room, (room) => room.user)
+  @JoinColumn({ name: "roomId" })
+  room?: Room;
+
+  @Field({ nullable: true })
+  @Column({ nullable: true })
+  roomId?: number;
 
   @Field()
   @CreateDateColumn({ type: "timestamptz" })

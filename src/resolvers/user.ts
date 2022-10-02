@@ -190,8 +190,8 @@ export class UserResolver {
       if (!user?.id) throw new Error(InternalServerError);
 
       const existingUser = await User.findOne({
-        relations: ["location", "room"],
         where: { id: user?.id },
+        relations: ["location", "room"],
       });
 
       if (!existingUser) throw new Error(UserNotFoundError);
@@ -223,11 +223,9 @@ export class UserResolver {
 
       User.merge(existingUser, { ...updateMeInput });
 
-      await existingUser.save();
-
       return {
         message: "Update profile successfully",
-        user: existingUser,
+        user: await existingUser.save(),
       };
     } catch (err) {
       throw new Error(err);
@@ -316,8 +314,10 @@ export class UserResolver {
         throw new Error(PermissionDeniedError);
 
       let options = {
-        email: ILike("%" + email + "%"),
-        ...(name && { fullName: ILike("%" + name + "%") }),
+        ...(email && {
+          email: ILike("%" + email + "%"),
+        }),
+        ...(name && { name: ILike("%" + name + "%") }),
         ...(role && { role }),
         ...(isActive !== undefined && isActive !== null && { isActive }),
         ...(locationId && { locationId }),
@@ -374,7 +374,7 @@ export class UserResolver {
       });
 
       if (currentUser.role === USER_ROLE.SuperAdmin) {
-        if (locationId) newUser.locationId = locationId;
+        newUser.locationId = locationId;
         newUser.role = USER_ROLE.Admin;
       } else if (currentUser.role === USER_ROLE.Admin) {
         newUser.role = USER_ROLE.Customer;
@@ -385,7 +385,7 @@ export class UserResolver {
         if (!room) throw new Error("Room not found");
         newUser.roomId = roomId;
         room.status = ROOM_STATUS.Owned;
-        room.save();
+        await room.save();
       }
 
       return {
@@ -436,7 +436,7 @@ export class UserResolver {
         if (!room) throw new Error("Room not found");
         foundUser.roomId = roomId;
         room.status = ROOM_STATUS.Owned;
-        room.save();
+        await room.save();
       }
 
       return {

@@ -18,6 +18,9 @@ export class UpsertLocationInput {
   @Field({ nullable: true })
   thumbnail?: string;
 
+  @Field()
+  numOfFloor: number;
+
   @Field({ nullable: true })
   lat?: number;
 

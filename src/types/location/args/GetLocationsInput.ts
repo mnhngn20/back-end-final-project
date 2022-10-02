@@ -13,14 +13,11 @@ export class GetLocationsInput {
   page: number = 1;
 
   @Field({ nullable: true })
-  status?: boolean;
+  isActive?: boolean;
 
   @Field({ nullable: true })
   name?: string;
 
   @Field({ nullable: true })
   address?: string;
-
-  @Field({ nullable: true })
-  keyword?: string;
 }

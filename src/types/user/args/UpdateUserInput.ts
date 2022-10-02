@@ -12,6 +12,9 @@ export class UpdateUserInput {
   avatar?: string;
 
   @Field({ nullable: true })
+  address?: string;
+
+  @Field({ nullable: true })
   identityNumber?: string;
 
   @Field({ nullable: true })

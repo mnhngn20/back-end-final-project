@@ -17,21 +17,21 @@ export class ContactInformation extends BaseEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Field()
-  @Column()
-  phoneNumber: string;
+  @Field({ nullable: true })
+  @Column({ nullable: true })
+  phoneNumber?: string;
 
-  @Field()
-  @Column()
-  address: string;
+  @Field({ nullable: true })
+  @Column({ nullable: true })
+  address?: string;
 
-  @Field()
-  @Column()
-  name: string;
+  @Field({ nullable: true })
+  @Column({ nullable: true })
+  name?: string;
 
-  @Field()
-  @Column()
-  email: string;
+  @Field({ nullable: true })
+  @Column({ nullable: true })
+  email?: string;
 
   @Field()
   @Column()

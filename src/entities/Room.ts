@@ -60,7 +60,7 @@ export class Room extends BaseEntity {
 
   @Field((_type) => User, { nullable: true })
   @OneToOne(() => User, (user) => user.room)
-  user: User;
+  user?: User;
 
   @Field((_type) => [Equipment], { nullable: true })
   @OneToMany(() => Equipment, (equipment) => equipment.room)
