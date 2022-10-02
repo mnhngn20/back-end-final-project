@@ -23,8 +23,8 @@ export class CreateUserInput {
   @Field({ nullable: true })
   phoneNumber?: string;
 
-  @Field()
-  locationId: number;
+  @Field({ nullable: true })
+  locationId?: number;
 
   @Field({ nullable: true })
   dateOfBirth?: Date;

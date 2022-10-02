@@ -224,6 +224,9 @@ export class UserResolver {
       });
 
       if (currentUser.role === USER_ROLE.SuperAdmin) {
+        if (!locationId) {
+          throw new Error("Must include location when create user");
+        }
         newUser.locationId = locationId;
         newUser.role = USER_ROLE.Admin;
       } else if (currentUser.role === USER_ROLE.Admin) {

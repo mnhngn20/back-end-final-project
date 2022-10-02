@@ -29,13 +29,13 @@ export class User extends BaseEntity {
   @Column({ unique: true })
   email: string;
 
-  @Field()
-  @Column()
-  address: string;
+  @Field({ nullable: true })
+  @Column({ nullable: true })
+  address?: string;
 
-  @Field()
-  @Column()
-  phoneNumber: string;
+  @Field({ nullable: true })
+  @Column({ nullable: true })
+  phoneNumber?: string;
 
   @Field()
   @Column({ type: "timestamptz" })
@@ -49,8 +49,8 @@ export class User extends BaseEntity {
   })
   role: USER_ROLE;
 
-  @Field()
-  @Column()
+  @Field({ nullable: true })
+  @Column({ nullable: true })
   identityNumber?: string;
 
   @Field({ nullable: true })
