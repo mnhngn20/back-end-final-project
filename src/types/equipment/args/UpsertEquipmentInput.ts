@@ -12,10 +12,10 @@ export class UpsertEquipmentInput {
   name?: string;
 
   @Field({ nullable: true })
-  equipmentTypeId?: number;
+  image?: String;
 
   @Field({ nullable: true })
-  image?: String;
+  description?: string;
 
   @Field({ nullable: true })
   isActive?: boolean = true;

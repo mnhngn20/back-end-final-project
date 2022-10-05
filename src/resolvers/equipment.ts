@@ -37,7 +37,7 @@ export class EquipmentResolver {
 
       const existingEquipment = await Equipment.findOne({
         where: { id },
-        relations: ["room"],
+        relations: ["room", "location"],
       });
 
       if (!existingEquipment) throw new Error("Equipment Not Found");
@@ -81,7 +81,7 @@ export class EquipmentResolver {
         order: { createdAt: orderBy },
         take: limit,
         skip: (page - 1) * limit,
-        relations: ["room"],
+        relations: ["room", "location"],
       });
 
       const totalPages = Math.ceil(total / limit);
@@ -109,7 +109,7 @@ export class EquipmentResolver {
     try {
       const existingEquipment = await Equipment.findOne({
         where: { id },
-        relations: ["room"],
+        relations: ["room", "location"],
       });
 
       if (!existingEquipment) throw new Error("Equipment Not Found");
@@ -119,9 +119,8 @@ export class EquipmentResolver {
       });
 
       if (
-        user?.role === USER_ROLE.SuperAdmin ||
-        (user?.role === USER_ROLE.Admin &&
-          user?.locationId === existingRoom?.locationId)
+        user?.role === USER_ROLE.Admin &&
+        user?.locationId === existingRoom?.locationId
       ) {
         existingEquipment.isActive = isActive;
 
@@ -142,7 +141,7 @@ export class EquipmentResolver {
   async upsertEquipment(
     @Arg("input")
     upsertEquipmentInput: UpsertEquipmentInput,
-    @Ctx() { user }: Context
+    @Ctx() { user: currentUser }: Context
   ): Promise<EquipmentResponse> {
     const { id, roomId, ...rest } = upsertEquipmentInput;
     try {
@@ -150,9 +149,8 @@ export class EquipmentResolver {
       if (!existingRoom) throw new Error("Room Not Found");
 
       if (
-        (user?.role === USER_ROLE.Admin &&
-          existingRoom.locationId === user?.locationId) ||
-        user?.role === USER_ROLE.SuperAdmin
+        currentUser?.role === USER_ROLE.Admin &&
+        existingRoom.locationId === currentUser?.locationId
       ) {
         if (id) {
           // UPDATE EQUIPMENT SECTION
@@ -162,7 +160,6 @@ export class EquipmentResolver {
           Equipment.merge(existingEquipment, { ...rest });
           if (roomId) {
             existingEquipment.roomId = roomId;
-            existingEquipment.room = existingRoom;
           }
 
           return {
@@ -176,7 +173,7 @@ export class EquipmentResolver {
             ...rest,
           });
 
-          if (roomId) newEquipment.room = existingRoom;
+          newEquipment.locationId = currentUser.locationId;
 
           return {
             message: "Create Equipment successfully",
