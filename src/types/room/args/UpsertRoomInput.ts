@@ -1,4 +1,3 @@
-import { ROOM_STATUS } from "../../../constants";
 import { Field, InputType } from "type-graphql";
 
 @InputType()
@@ -7,19 +6,19 @@ export class UpsertRoomInput {
   id?: number;
 
   @Field({ nullable: true })
-  locationId?: number;
+  name?: string;
 
   @Field({ nullable: true })
-  name?: string;
+  thumbnail?: string;
+
+  @Field({ nullable: true })
+  floor?: number;
 
   @Field({ nullable: true })
   description?: string;
 
   @Field({ nullable: true })
   images?: string;
-
-  @Field(() => ROOM_STATUS, { nullable: true })
-  status?: ROOM_STATUS;
 
   @Field({ nullable: true })
   basePrice?: number;

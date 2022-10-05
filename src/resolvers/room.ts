@@ -9,7 +9,6 @@ import {
 import { Room } from "../entities/Room";
 import {
   InternalServerError,
-  InvalidInputError,
   LocationNotFoundError,
   OutOfBoundsError,
   PermissionDeniedError,
@@ -24,7 +23,7 @@ import {
   UpsertRoomInput,
 } from "../types/room";
 import { LessThanOrEqual, ILike, MoreThanOrEqual } from "typeorm";
-import { USER_ROLE } from "../constants";
+import { ROOM_STATUS, USER_ROLE } from "../constants";
 import { Location } from "../entities";
 
 @Resolver()
@@ -64,6 +63,7 @@ export class RoomResolver {
       status,
       minBasePrice,
       maxBasePrice,
+      floor,
     }: GetRoomsInput,
     @Ctx() { user }: Context
   ): Promise<RoomListResponse> {
@@ -71,7 +71,7 @@ export class RoomResolver {
       if (!user?.id) throw new Error(InternalServerError);
 
       const options = {
-        ...(status !== undefined && status !== null && { status }),
+        ...(status && { status }),
         ...(minBasePrice !== undefined &&
           minBasePrice !== null && {
             basePrice: MoreThanOrEqual(minBasePrice),
@@ -80,6 +80,7 @@ export class RoomResolver {
           maxBasePrice !== null && {
             basePrice: LessThanOrEqual(maxBasePrice),
           }),
+        ...(floor && { floor }),
         ...(locationId && { locationId }),
         ...(name && {
           name: ILike(`%${name}%`),
@@ -115,12 +116,12 @@ export class RoomResolver {
   async upsertRoom(
     @Arg("input")
     upsertRoomInput: UpsertRoomInput,
-    @Ctx() { user }: Context
+    @Ctx() { user: currentUser }: Context
   ): Promise<RoomResponse> {
-    const { id, locationId, ...rest } = upsertRoomInput;
+    const { id, floor, ...rest } = upsertRoomInput;
     try {
-      if (!user?.id) throw new Error(InternalServerError);
-      if (user.role !== USER_ROLE.Admin && user.role !== USER_ROLE.SuperAdmin)
+      if (!currentUser?.id) throw new Error(InternalServerError);
+      if (currentUser.role !== USER_ROLE.Admin)
         throw new Error(PermissionDeniedError);
 
       if (id) {
@@ -131,20 +132,26 @@ export class RoomResolver {
         });
         if (!existingRoom) throw new Error(RoomNotFoundError);
 
-        if (
-          user.role === USER_ROLE.Admin &&
-          user.locationId !== existingRoom.locationId
-        )
+        const currentLocation = await Location.findOne({
+          where: { id: existingRoom?.locationId },
+        });
+
+        if (!currentLocation) {
+          throw new Error("Location Not Found");
+        }
+
+        if (currentUser.locationId !== existingRoom.locationId)
           throw new Error(PermissionDeniedError);
 
         Room.merge(existingRoom, { ...rest });
 
-        if (locationId && user.role === USER_ROLE.SuperAdmin) {
-          const location = await Location.findOne({
-            where: { id: locationId },
-          });
-          if (!location) throw new Error(LocationNotFoundError);
-          existingRoom.locationId = locationId;
+        if (floor && currentLocation?.numOfFloor) {
+          if (floor < 0 || floor > currentLocation?.numOfFloor) {
+            throw new Error(
+              `Room floor can't greater than current location's floor or less than 1`
+            );
+          }
+          existingRoom.floor = floor;
         }
 
         return {
@@ -153,21 +160,26 @@ export class RoomResolver {
         };
       } else {
         // CREATE Room
-        if (user.role === USER_ROLE.SuperAdmin && locationId === undefined)
-          throw new Error(InvalidInputError);
-
-        const newRoomLocationId =
-          user.role === USER_ROLE.Admin ? user.locationId : locationId;
-
-        const location = await Location.findOne({
-          where: { id: newRoomLocationId },
+        const existingLocation = await Location.findOne({
+          where: { id: currentUser?.locationId },
         });
-        if (!location) throw new Error(LocationNotFoundError);
+        if (!existingLocation) throw new Error(LocationNotFoundError);
 
         const newRoom = await Room.create({
           ...rest,
-          locationId: newRoomLocationId,
+          locationId: existingLocation?.id,
         });
+
+        if (floor && existingLocation?.numOfFloor) {
+          if (floor < 0 || floor > existingLocation?.numOfFloor) {
+            throw new Error(
+              `Room floor can't greater than current location's floor or less than 1`
+            );
+          }
+          newRoom.floor = floor;
+        }
+
+        newRoom.status = ROOM_STATUS.Available;
 
         return {
           message: "Upsert Room successfully",
