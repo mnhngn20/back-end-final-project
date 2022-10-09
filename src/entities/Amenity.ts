@@ -24,10 +24,6 @@ export class Amenity extends BaseEntity {
 
   @Field({ nullable: true })
   @Column({ nullable: true })
-  icon?: string;
-
-  @Field({ nullable: true })
-  @Column({ nullable: true })
   description?: string;
 
   @Field()

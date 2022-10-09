@@ -5,6 +5,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinTable,
   ManyToMany,
   OneToMany,
   PrimaryGeneratedColumn,
@@ -87,6 +88,7 @@ export class Location extends BaseEntity {
     () => LocationService,
     (locationService) => locationService.location
   )
+  @JoinTable()
   locationServices: LocationService[];
 
   @Field(() => [Amenity])

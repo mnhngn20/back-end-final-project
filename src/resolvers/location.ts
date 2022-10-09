@@ -1,3 +1,4 @@
+import { LocationService } from "./../entities/LocationService";
 import {
   Arg,
   Ctx,
@@ -29,7 +30,7 @@ export class LocationResolver {
     try {
       const existingLocation = await Location.findOne({
         where: { id },
-        relations: ["contactInformations"],
+        relations: ["contactInformations", "locationServices"],
       });
       if (!existingLocation) throw new Error("Location Not Found");
       return {
@@ -58,7 +59,7 @@ export class LocationResolver {
         order: { createdAt: orderBy },
         take: limit,
         skip: (page - 1) * limit,
-        relations: ["contactInformations"],
+        relations: ["contactInformations", "locationServices"],
       });
 
       const totalPages = Math.ceil(total / limit);
@@ -84,7 +85,29 @@ export class LocationResolver {
     upsertLocationInput: UpsertLocationInput,
     @Ctx() { user }: Context
   ): Promise<LocationResponse> {
-    const { id, isActive, contactInformations, ...rest } = upsertLocationInput;
+    const { id, isActive, contactInformations, locationServiceIds, ...rest } =
+      upsertLocationInput;
+
+    const locationServices: LocationService[] = [];
+
+    if (locationServiceIds) {
+      locationServiceIds?.forEach(async (id) => {
+        try {
+          const existingLocationService = await LocationService.findOne({
+            where: { id },
+          });
+
+          if (!existingLocationService) {
+            throw new Error("Location Service Not Found");
+          }
+
+          locationServices.push(existingLocationService);
+        } catch (error) {
+          throw new Error(error);
+        }
+      });
+    }
+
     try {
       if (id) {
         // UPDATE LOCATION
@@ -105,6 +128,8 @@ export class LocationResolver {
             user?.role === USER_ROLE.SuperAdmin
           )
             existingLocation.isActive = isActive;
+
+          existingLocation.locationServices = locationServices;
 
           const locationContactInformations = await ContactInformation.find({
             where: { locationId: existingLocation?.id },
@@ -165,7 +190,7 @@ export class LocationResolver {
             ...upsertLocationInput,
           });
 
-          await newLocation.save();
+          newLocation.locationServices = locationServices;
 
           if (contactInformations) {
             contactInformations.forEach(async (contactInformation) => {
@@ -179,7 +204,7 @@ export class LocationResolver {
 
           return {
             message: "Create Location successfully",
-            location: newLocation,
+            location: await newLocation.save(),
           };
         } else {
           throw new Error(PermissionDeniedError);

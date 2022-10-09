@@ -35,4 +35,7 @@ export class UpsertLocationInput {
 
   @Field(() => [LocationContactInformationInput], { nullable: true })
   contactInformations?: LocationContactInformationInput[];
+
+  @Field(() => [Number], { nullable: true })
+  locationServiceIds?: number[];
 }

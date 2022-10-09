@@ -25,6 +25,10 @@ export class AmenityType extends BaseEntity {
   @Column({ nullable: true })
   description?: string;
 
+  @Field({ nullable: true })
+  @Column({ nullable: true })
+  icon?: string;
+
   @Field()
   @Column()
   isActive: boolean = true;

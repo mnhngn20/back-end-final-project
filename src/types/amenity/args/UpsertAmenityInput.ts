@@ -9,9 +9,6 @@ export class UpsertAmenityInput {
   name?: string;
 
   @Field({ nullable: true })
-  icon?: string;
-
-  @Field({ nullable: true })
   description?: string;
 
   @Field()
