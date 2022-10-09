@@ -1,17 +1,21 @@
+import { LocationService } from "./LocationService";
 import { Field, ID, ObjectType } from "type-graphql";
 import {
   BaseEntity,
   Column,
   CreateDateColumn,
   Entity,
+  ManyToMany,
   OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
+  JoinTable,
 } from "typeorm";
 import { User } from "./User";
 import { Room } from "./Room";
 import { ContactInformation } from "./ContactInformation";
 import { Equipment } from "./Equipment";
+import { Amenity } from "./Amenity";
 
 @ObjectType()
 @Entity()
@@ -78,6 +82,18 @@ export class Location extends BaseEntity {
   @Field((_type) => [Equipment], { nullable: true })
   @OneToMany(() => Equipment, (equipment) => equipment.location)
   equipments: Equipment[];
+
+  @Field(() => [LocationService])
+  @ManyToMany(
+    () => LocationService,
+    (locationService) => locationService.location
+  )
+  locationServices: LocationService[];
+
+  @Field(() => [Amenity])
+  @ManyToMany(() => Amenity)
+  @JoinTable()
+  amenities: Amenity[];
 
   @Field()
   @CreateDateColumn({ type: "timestamptz" })

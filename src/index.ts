@@ -15,6 +15,7 @@ import {
   RoomResolver,
   UserResolver,
   AuthResolver,
+  AmenityTypeResolver,
 } from "./resolvers";
 import {
   Equipment,
@@ -22,6 +23,9 @@ import {
   Room,
   ContactInformation,
   User,
+  Amenity,
+  AmenityType,
+  LocationService,
 } from "./entities";
 import NotificationHelper from "./utils/common/notificationHelper";
 
@@ -34,7 +38,16 @@ const dataSource = new DataSource({
   // url: process.env.DB_URL_PROD,
   logging: false,
   synchronize: true,
-  entities: [Equipment, Location, Room, ContactInformation, User],
+  entities: [
+    Equipment,
+    Location,
+    Room,
+    ContactInformation,
+    User,
+    Amenity,
+    AmenityType,
+    LocationService,
+  ],
 });
 
 const main = async () => {
@@ -77,6 +90,7 @@ const main = async () => {
         RoomResolver,
         UserResolver,
         AuthResolver,
+        AmenityTypeResolver,
       ],
       validate: false,
     }),
