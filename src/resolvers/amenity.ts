@@ -1,3 +1,4 @@
+import { Location } from "./../entities/Location";
 import { Context } from "./../types/Context";
 import {
   Arg,
@@ -27,7 +28,7 @@ export class AmenityResolver {
     try {
       const existingAmenity = await Amenity.findOne({
         where: { id },
-        relations: ["amenityType"],
+        relations: ["location", "amenityType"],
       });
 
       if (!existingAmenity) throw new Error("Amenity Not Found");
@@ -62,7 +63,7 @@ export class AmenityResolver {
         take: limit,
         where: options,
         skip: (page - 1) * limit,
-        relations: ["amenityType"],
+        relations: ["location", "amenityType"],
       });
 
       const totalPages = Math.ceil(total / limit);
@@ -108,7 +109,7 @@ export class AmenityResolver {
   @UseMiddleware(authMiddleware)
   async upsertAmenity(
     @Arg("input")
-    { id, amenityTypeId, ...rest }: UpsertAmenityInput
+    { id, amenityTypeId, locationId, ...rest }: UpsertAmenityInput
   ): Promise<AmenityResponse> {
     try {
       const existingAmenityType = await AmenityType.findOne({
@@ -132,9 +133,22 @@ export class AmenityResolver {
         };
       } else {
         // CREATE SECTION
+        if (!locationId) {
+          throw new Error("Must include locationId");
+        }
+
+        const existingLocation = await Location.findOne({
+          where: { id: locationId },
+        });
+
+        if (!existingLocation) {
+          throw new Error("Location Not Found");
+        }
+
         const newAmenity = await Amenity.create({
           ...rest,
           amenityTypeId,
+          locationId,
         });
 
         return {

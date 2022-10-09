@@ -9,7 +9,6 @@ import {
   OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
-  JoinTable,
 } from "typeorm";
 import { User } from "./User";
 import { Room } from "./Room";
@@ -91,8 +90,7 @@ export class Location extends BaseEntity {
   locationServices: LocationService[];
 
   @Field(() => [Amenity])
-  @ManyToMany(() => Amenity)
-  @JoinTable()
+  @OneToMany(() => Amenity, (amenity) => amenity.location)
   amenities: Amenity[];
 
   @Field()

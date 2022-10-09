@@ -9,6 +9,7 @@ import {
   UpdateDateColumn,
 } from "typeorm";
 import { AmenityType } from "./AmenityType";
+import { Location } from "./Location";
 
 @ObjectType()
 @Entity()
@@ -40,6 +41,14 @@ export class Amenity extends BaseEntity {
   @Field(() => AmenityType)
   @ManyToOne(() => AmenityType, (amenityType) => amenityType.amenities)
   amenityType: AmenityType;
+
+  @Field()
+  @Column()
+  locationId: number;
+
+  @Field(() => Location)
+  @ManyToOne(() => Location, (location) => location.amenities)
+  location: Location;
 
   @Field()
   @CreateDateColumn({ type: "timestamptz" })

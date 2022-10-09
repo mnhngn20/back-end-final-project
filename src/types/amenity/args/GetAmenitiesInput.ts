@@ -13,6 +13,9 @@ export class GetAmenitiesInput {
   orderBy: ORDER_BY = ORDER_BY.ASC;
 
   @Field({ nullable: true })
+  locationId?: number;
+
+  @Field({ nullable: true })
   amenityTypeId?: number;
 
   @Field({ nullable: true })

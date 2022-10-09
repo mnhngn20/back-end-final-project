@@ -19,4 +19,7 @@ export class UpsertAmenityInput {
 
   @Field({ nullable: true })
   isActive?: boolean;
+
+  @Field({ nullable: true })
+  locationId?: number;
 }
