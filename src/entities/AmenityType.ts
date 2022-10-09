@@ -30,9 +30,7 @@ export class AmenityType extends BaseEntity {
   isActive: boolean = true;
 
   @Field((_type) => [Amenity], { nullable: true })
-  @OneToMany(() => Amenity, (amenity) => amenity.amenityType, {
-    nullable: true,
-  })
+  @OneToMany(() => Amenity, (amenity) => amenity.amenityType)
   amenities?: Amenity[];
 
   @Field()

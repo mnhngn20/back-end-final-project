@@ -16,6 +16,8 @@ import {
   UserResolver,
   AuthResolver,
   AmenityTypeResolver,
+  AmenityResolver,
+  LocationServiceResolver,
 } from "./resolvers";
 import {
   Equipment,
@@ -91,6 +93,8 @@ const main = async () => {
         UserResolver,
         AuthResolver,
         AmenityTypeResolver,
+        AmenityResolver,
+        LocationServiceResolver,
       ],
       validate: false,
     }),

@@ -1,6 +1,9 @@
-import { GetAmenityTypesInput } from "./../types/amenityType/args/GetAmenityTypesInput";
-import { AmenityTypeListResponse } from "./../types/amenityType/reponses/AmenityTypeListResponse";
-import { AmenityTypeResponse } from "./../types/amenityType/reponses/AmenityTypeResponse";
+import {
+  LocationServiceResponse,
+  LocationServiceListResponse,
+  GetLocationServicesInput,
+  UpsertLocationServiceInput,
+} from "./../types/locationService";
 import {
   Arg,
   Ctx,
@@ -17,51 +20,52 @@ import {
   OutOfBoundsError,
   PermissionDeniedError,
 } from "../types/Errors";
-import { AmenityType } from "../entities";
+import { LocationService } from "../entities";
 import { ILike } from "typeorm";
-import { UpsertAmenityTypeInput } from "./../types/amenityType/args/UpsertAmenityTypeInput";
 
 @Resolver()
-export class AmenityTypeResolver {
-  @Query((_returns) => AmenityTypeResponse)
+export class LocationServiceResolver {
+  @Query((_returns) => LocationServiceResponse)
   @UseMiddleware(authMiddleware)
-  async getAmenityType(
+  async getLocationService(
     @Arg("id")
     id: number
-  ): Promise<AmenityTypeResponse> {
+  ): Promise<LocationServiceResponse> {
     try {
-      const existingAmenityType = await AmenityType.findOne({
+      const existingLocationService = await LocationService.findOne({
         where: { id },
       });
 
-      if (!existingAmenityType) throw new Error("Amenity Type Not Found");
+      if (!existingLocationService)
+        throw new Error("Location Service Not Found");
       return {
-        message: "Get Amenity Type successfully",
-        amenityType: existingAmenityType,
+        message: "Get Location Service successfully",
+        locationService: existingLocationService,
       };
     } catch (error) {
       throw new Error(error);
     }
   }
 
-  @Query((_returns) => AmenityTypeListResponse)
+  @Query((_returns) => LocationServiceListResponse)
   @UseMiddleware(authMiddleware)
-  async getAmenityTypes(
+  async getLocationServices(
     @Arg("input")
-    { limit, orderBy, page, name }: GetAmenityTypesInput,
+    { limit, orderBy, page, name, isActive }: GetLocationServicesInput,
     @Ctx()
     { user }: Context
-  ): Promise<AmenityTypeListResponse> {
+  ): Promise<LocationServiceListResponse> {
     try {
       if (!user?.id) throw new Error(InternalServerError);
 
       const options = {
+        ...(isActive !== undefined && isActive !== null && { isActive }),
         ...(name && {
           name: ILike(`%${name}%`),
         }),
       };
 
-      const [result, total] = await AmenityType.findAndCount({
+      const [result, total] = await LocationService.findAndCount({
         where: options,
         order: { createdAt: orderBy },
         take: limit,
@@ -73,7 +77,7 @@ export class AmenityTypeResolver {
         throw new Error(OutOfBoundsError);
 
       return {
-        message: "Get Amenity Types successfully",
+        message: "Get Location Services successfully",
         items: result,
         page,
         total,
@@ -84,40 +88,41 @@ export class AmenityTypeResolver {
     }
   }
 
-  @Mutation((_returns) => AmenityTypeResponse)
+  @Mutation((_returns) => LocationServiceResponse)
   @UseMiddleware(authMiddleware)
-  async upsertAmenityType(
+  async upsertLocationService(
     @Arg("input")
-    { id, ...rest }: UpsertAmenityTypeInput,
+    { id, ...rest }: UpsertLocationServiceInput,
     @Ctx()
     { user: currentUser }: Context
-  ): Promise<AmenityTypeResponse> {
+  ): Promise<LocationServiceResponse> {
     if (currentUser?.role !== USER_ROLE.SuperAdmin)
       throw new Error(PermissionDeniedError);
     try {
       if (id) {
         // UPDATE SECTION
-        const existingAmenityType = await AmenityType.findOne({
+        const existingLocationService = await LocationService.findOne({
           where: { id },
         });
 
-        if (!existingAmenityType) throw new Error("Amenity Type Not Found");
+        if (!existingLocationService)
+          throw new Error("Location Service Not Found");
 
-        AmenityType.merge(existingAmenityType, { ...rest });
+        LocationService.merge(existingLocationService, { ...rest });
 
         return {
-          message: "Update Amenity Type successfully",
-          amenityType: await existingAmenityType.save(),
+          message: "Update Location Service successfully",
+          locationService: await existingLocationService.save(),
         };
       } else {
         // CREATE SECTION
-        const newAmenityType = await AmenityType.create({
+        const newLocationService = await LocationService.create({
           ...rest,
         });
 
         return {
-          message: "Create Amenity Type successfully",
-          amenityType: await newAmenityType.save(),
+          message: "Create Location Service successfully",
+          locationService: await newLocationService.save(),
         };
       }
     } catch (error) {
