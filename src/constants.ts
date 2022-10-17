@@ -9,10 +9,15 @@ export enum ROOM_STATUS {
   NotAvailable = "Not Available",
 }
 
-export enum RESERVATION_STATUS {
+export enum PAYMENT_STATUS {
   Paid = "Paid",
   Unpaid = "Unpaid",
   Canceled = "Canceled",
+}
+
+export enum LOCATION_RESERVATION_STATUS {
+  Draft = "Draft",
+  Published = "Published",
 }
 
 export enum ORDER_BY {
@@ -42,13 +47,19 @@ registerEnumType(ORDER_BY, {
 registerEnumType(ROOM_STATUS, {
   name: "ROOM_STATUS",
 });
+registerEnumType(PAYMENT_STATUS, {
+  name: "PAYMENT_STATUS",
+});
+registerEnumType(LOCATION_RESERVATION_STATUS, {
+  name: "LOCATION_RESERVATION_STATUS",
+});
 registerEnumType(USER_ROLE, {
   name: "USER_ROLE",
 });
 registerEnumType(PROMOTION_TYPE, {
   name: "PROMOTION_TYPE",
 });
-registerEnumType(RESERVATION_STATUS, {
+registerEnumType(PAYMENT_STATUS, {
   name: "RESERVATION_STATUS",
 });
 registerEnumType(PAYMENT_METHOD, {

@@ -6,6 +6,7 @@ import {
   Entity,
   JoinColumn,
   ManyToOne,
+  OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
@@ -13,6 +14,8 @@ import {
 import { Location } from "./Location";
 import { USER_ROLE } from "../constants";
 import { Room } from "./Room";
+import { Payment } from "./Payment";
+import { LocationReservation } from "./LocationReservation";
 
 @ObjectType()
 @Entity()
@@ -63,6 +66,17 @@ export class User extends BaseEntity {
 
   @Column()
   password: string;
+
+  @Field((_type) => [Payment], { nullable: true })
+  @OneToMany(() => Payment, (payment) => payment.location)
+  payments: Payment[];
+
+  @Field((_type) => [LocationReservation], { nullable: true })
+  @OneToMany(
+    () => LocationReservation,
+    (locationReservation) => locationReservation.createdBy
+  )
+  locationReservations: LocationReservation[];
 
   @Field((_type) => Location, { nullable: true })
   @ManyToOne(() => Location, (location) => location.users)

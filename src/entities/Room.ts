@@ -14,6 +14,7 @@ import {
 import { Equipment } from "./Equipment";
 import { Location } from "./Location";
 import { User } from "./User";
+import { Payment } from "./Payment";
 
 @ObjectType()
 @Entity()
@@ -70,9 +71,9 @@ export class Room extends BaseEntity {
   @OneToMany(() => Equipment, (equipment) => equipment.room)
   equipments: Equipment[];
 
-  // @Field((_type) => [Reservation], { nullable: true })
-  // @OneToMany(() => Reservation, (reservation) => reservation.room)
-  // reservations: Reservation[];
+  @Field((_type) => [Payment], { nullable: true })
+  @OneToMany(() => Payment, (payment) => payment.room)
+  payments: Payment[];
 
   @Field()
   @CreateDateColumn({ type: "timestamptz" })

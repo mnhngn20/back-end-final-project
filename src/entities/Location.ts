@@ -18,6 +18,8 @@ import { Equipment } from "./Equipment";
 import { Amenity } from "./Amenity";
 import { GraphQLJSONObject } from "graphql-type-json";
 import { Geometry } from "geojson";
+import { Payment } from "./Payment";
+import { LocationReservation } from "./LocationReservation";
 
 @ObjectType()
 @Entity()
@@ -103,6 +105,17 @@ export class Location extends BaseEntity {
   @Field(() => [Amenity])
   @OneToMany(() => Amenity, (amenity) => amenity.location)
   amenities: Amenity[];
+
+  @Field((_type) => [LocationReservation], { nullable: true })
+  @OneToMany(
+    () => LocationReservation,
+    (locationReservation) => locationReservation.location
+  )
+  locationReservations: LocationReservation[];
+
+  @Field((_type) => [Payment], { nullable: true })
+  @OneToMany(() => Payment, (payment) => payment.location)
+  payments: Payment[];
 
   @Field()
   @CreateDateColumn({ type: "timestamptz" })

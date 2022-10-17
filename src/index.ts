@@ -8,6 +8,7 @@ import { buildSchema } from "type-graphql";
 import { ApolloServerPluginLandingPageGraphQLPlayground } from "apollo-server-core";
 import { __prod__ } from "./constants";
 import { Context } from "./types/Context";
+import utc from "dayjs/plugin/utc";
 import cors from "cors";
 import {
   EquipmentResolver,
@@ -18,6 +19,7 @@ import {
   AmenityTypeResolver,
   AmenityResolver,
   LocationServiceResolver,
+  LocationReservationResolver,
 } from "./resolvers";
 import {
   Equipment,
@@ -28,8 +30,13 @@ import {
   Amenity,
   AmenityType,
   LocationService,
+  LocationReservation,
+  Payment,
 } from "./entities";
 import NotificationHelper from "./utils/common/notificationHelper";
+import dayjs from "dayjs";
+
+dayjs.extend(utc);
 
 export const dataSource = new DataSource({
   type: "postgres",
@@ -49,6 +56,8 @@ export const dataSource = new DataSource({
     Amenity,
     AmenityType,
     LocationService,
+    LocationReservation,
+    Payment,
   ],
 });
 
@@ -95,6 +104,7 @@ const main = async () => {
         AmenityTypeResolver,
         AmenityResolver,
         LocationServiceResolver,
+        LocationReservationResolver,
       ],
       validate: false,
     }),
