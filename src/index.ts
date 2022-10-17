@@ -45,7 +45,7 @@ export const dataSource = new DataSource({
   password: process.env.DB_PASSWORD_DEV,
   // ssl: true,
   // url: process.env.DB_URL_PROD,
-  logging: true,
+  // logging: true,
   synchronize: true,
   entities: [
     Equipment,

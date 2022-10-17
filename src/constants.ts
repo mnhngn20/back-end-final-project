@@ -25,7 +25,7 @@ export enum ORDER_BY {
   DESC = "DESC",
 }
 
-export enum PROMOTION_TYPE {
+export enum DISCOUNT_TYPE {
   PercentageDiscount = "PercentageDiscount",
   FixedCashDiscount = "FixedCashDiscount",
 }
@@ -56,8 +56,8 @@ registerEnumType(LOCATION_RESERVATION_STATUS, {
 registerEnumType(USER_ROLE, {
   name: "USER_ROLE",
 });
-registerEnumType(PROMOTION_TYPE, {
-  name: "PROMOTION_TYPE",
+registerEnumType(DISCOUNT_TYPE, {
+  name: "DISCOUNT_TYPE",
 });
 registerEnumType(PAYMENT_STATUS, {
   name: "RESERVATION_STATUS",

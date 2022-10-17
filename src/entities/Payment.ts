@@ -1,4 +1,4 @@
-import { PAYMENT_STATUS } from "../constants";
+import { DISCOUNT_TYPE, PAYMENT_STATUS } from "../constants";
 import { Field, ID, ObjectType } from "type-graphql";
 import {
   BaseEntity,
@@ -23,7 +23,28 @@ export class Payment extends BaseEntity {
 
   @Field({ nullable: true })
   @Column({ nullable: true })
-  totalPrice?: string;
+  totalPrice?: number;
+
+  @Field({ nullable: true })
+  @Column({ nullable: true })
+  electricCounter?: number;
+
+  @Field({ nullable: true })
+  @Column({ nullable: true })
+  waterPrice?: number;
+
+  @Field({ nullable: true })
+  @Column({ nullable: true })
+  discount?: number;
+
+  @Field(() => DISCOUNT_TYPE, { nullable: true })
+  @Column({
+    enum: DISCOUNT_TYPE,
+    default: DISCOUNT_TYPE.FixedCashDiscount,
+    type: "enum",
+    nullable: true,
+  })
+  discountType?: DISCOUNT_TYPE;
 
   @Field(() => PAYMENT_STATUS)
   @Column({

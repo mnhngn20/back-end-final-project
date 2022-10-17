@@ -68,7 +68,7 @@ export class User extends BaseEntity {
   password: string;
 
   @Field((_type) => [Payment], { nullable: true })
-  @OneToMany(() => Payment, (payment) => payment.location)
+  @OneToMany(() => Payment, (payment) => payment.user)
   payments: Payment[];
 
   @Field((_type) => [LocationReservation], { nullable: true })

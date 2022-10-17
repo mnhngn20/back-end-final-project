@@ -58,7 +58,7 @@ export class LocationReservation extends BaseEntity {
   location: Location;
 
   @Field((_type) => [Payment], { nullable: true })
-  @OneToMany(() => Payment, (payment) => payment.location)
+  @OneToMany(() => Payment, (payment) => payment.locationReservation)
   payments: Payment[];
 
   @Field()

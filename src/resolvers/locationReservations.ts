@@ -1,3 +1,5 @@
+import { Payment } from "./../entities/Payment";
+import { Room } from "./../entities/Room";
 import { User } from "./../entities/User";
 import { LocationReservation } from "./../entities/LocationReservation";
 import { Location } from "./../entities/Location";
@@ -12,6 +14,7 @@ import { OutOfBoundsError, PermissionDeniedError } from "../types/Errors";
 import { authMiddleware } from "../middlewares/auth-middleware";
 import { Between, LessThanOrEqual, MoreThanOrEqual } from "typeorm";
 import dayjs from "dayjs";
+import { PAYMENT_STATUS } from "../constants";
 
 @Resolver()
 export class LocationReservationResolver {
@@ -194,8 +197,39 @@ export class LocationReservationResolver {
           locationId,
           startDate,
           status,
-          totalCalculatedPrice: 0,
           totalReceivedPrice: 0,
+          totalCalculatedPrice: 0,
+        });
+
+        await newLocationReservation.save();
+
+        const currentLocationRooms = await Room.find({
+          where: {
+            locationId,
+          },
+          relations: ["user"],
+        });
+
+        currentLocationRooms.forEach(async (room) => {
+          if (room?.user?.id) {
+            const newPaymentRecord = await Payment.create({
+              locationId,
+              locationReservationId: newLocationReservation?.id,
+              roomId: room?.id,
+              userId: room?.user?.id,
+              status: PAYMENT_STATUS.Unpaid,
+              electricCounter: 0,
+              totalPrice: room?.basePrice,
+              waterPrice: 0,
+            });
+
+            await newPaymentRecord.save();
+
+            newLocationReservation.totalCalculatedPrice =
+              (newLocationReservation.totalCalculatedPrice ?? 0) +
+              room?.basePrice;
+            await newLocationReservation.save();
+          }
         });
 
         return {
