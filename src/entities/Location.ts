@@ -16,6 +16,8 @@ import { Room } from "./Room";
 import { ContactInformation } from "./ContactInformation";
 import { Equipment } from "./Equipment";
 import { Amenity } from "./Amenity";
+import { GraphQLJSONObject } from "graphql-type-json";
+import { Geometry } from "geojson";
 
 @ObjectType()
 @Entity()
@@ -39,6 +41,16 @@ export class Location extends BaseEntity {
   @Field({ nullable: true })
   @Column({ type: "real", nullable: true })
   lat?: number;
+
+  @Field(() => GraphQLJSONObject, { nullable: true })
+  @Column({
+    type: "geometry",
+    spatialFeatureType: "Point",
+    srid: 4326,
+    select: false,
+    nullable: true,
+  })
+  geoLocation: Geometry;
 
   @Field({ nullable: true })
   @Column({ nullable: true })
@@ -84,10 +96,7 @@ export class Location extends BaseEntity {
   equipments: Equipment[];
 
   @Field(() => [LocationService])
-  @ManyToMany(
-    () => LocationService,
-    (locationService) => locationService.location
-  )
+  @ManyToMany(() => LocationService)
   @JoinTable()
   locationServices: LocationService[];
 

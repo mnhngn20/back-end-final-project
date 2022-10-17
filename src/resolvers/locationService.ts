@@ -15,18 +15,13 @@ import {
 import { authMiddleware } from "../middlewares/auth-middleware";
 import { Context } from "../types/Context";
 import { USER_ROLE } from "../constants";
-import {
-  InternalServerError,
-  OutOfBoundsError,
-  PermissionDeniedError,
-} from "../types/Errors";
+import { OutOfBoundsError, PermissionDeniedError } from "../types/Errors";
 import { LocationService } from "../entities";
 import { ILike } from "typeorm";
 
 @Resolver()
 export class LocationServiceResolver {
   @Query((_returns) => LocationServiceResponse)
-  @UseMiddleware(authMiddleware)
   async getLocationService(
     @Arg("id")
     id: number
@@ -48,16 +43,11 @@ export class LocationServiceResolver {
   }
 
   @Query((_returns) => LocationServiceListResponse)
-  @UseMiddleware(authMiddleware)
   async getLocationServices(
     @Arg("input")
-    { limit, orderBy, page, name, isActive }: GetLocationServicesInput,
-    @Ctx()
-    { user }: Context
+    { limit, orderBy, page, name, isActive }: GetLocationServicesInput
   ): Promise<LocationServiceListResponse> {
     try {
-      if (!user?.id) throw new Error(InternalServerError);
-
       const options = {
         ...(isActive !== undefined && isActive !== null && { isActive }),
         ...(name && {

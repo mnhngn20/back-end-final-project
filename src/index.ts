@@ -31,14 +31,14 @@ import {
 } from "./entities";
 import NotificationHelper from "./utils/common/notificationHelper";
 
-const dataSource = new DataSource({
+export const dataSource = new DataSource({
   type: "postgres",
   database: "final-project",
   username: process.env.DB_USERNAME_DEV,
   password: process.env.DB_PASSWORD_DEV,
   // ssl: true,
   // url: process.env.DB_URL_PROD,
-  logging: false,
+  logging: true,
   synchronize: true,
   entities: [
     Equipment,

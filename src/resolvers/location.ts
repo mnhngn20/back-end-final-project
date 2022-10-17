@@ -16,16 +16,15 @@ import {
   UpdateLocationStatusInput,
 } from "../types/location";
 import { Location } from "../entities/Location";
-import { ILike } from "typeorm";
 import { Context } from "../types/Context";
 import { USER_ROLE } from "../constants";
 import { OutOfBoundsError, PermissionDeniedError } from "../types/Errors";
 import { ContactInformation } from "../entities/ContactInformation";
+import { convertCoordToGeo } from "../utils/geoLocation";
 
 @Resolver()
 export class LocationResolver {
   @Query((_returns) => LocationResponse)
-  @UseMiddleware(authMiddleware)
   async getLocation(@Arg("id") id: number): Promise<LocationResponse> {
     try {
       const existingLocation = await Location.findOne({
@@ -43,24 +42,84 @@ export class LocationResolver {
   }
 
   @Query((_returns) => LocationListResponse)
-  @UseMiddleware(authMiddleware)
   async getLocations(
     @Arg("input")
-    { address, name, isActive, limit, orderBy, page }: GetLocationsInput
+    {
+      address,
+      name,
+      isActive,
+      limit,
+      orderBy,
+      page,
+      locationServiceIds,
+      lat,
+      long,
+    }: GetLocationsInput
   ): Promise<LocationListResponse> {
     try {
-      const options = {
-        ...(address && { address: ILike(`%${address}%`) }),
-        ...(name && { name: ILike(`%${name}%`) }),
-        ...(isActive !== undefined && { isActive }),
-      };
-      const [result, total] = await Location.findAndCount({
-        where: options,
-        order: { createdAt: orderBy },
-        take: limit,
-        skip: (page - 1) * limit,
-        relations: ["contactInformations", "locationServices"],
-      });
+      const builder = Location.createQueryBuilder("location")
+        .leftJoinAndSelect(
+          "location.contactInformations",
+          "contactInformations"
+        )
+        .leftJoinAndSelect("location.locationServices", "locationService")
+        .where(`"location"."id" IS NOT NULL`)
+        .orderBy("location.createdAt", orderBy);
+
+      if (lat && long) {
+        builder.andWhere(
+          "ST_DWithin(location.geoLocation, ST_SetSRID(ST_Point(:longitude, :latitude), 4326), :distance, true)",
+          {
+            longitude: long,
+            latitude: lat,
+            distance: 20000, //meter
+          }
+        );
+      }
+
+      if (locationServiceIds) {
+        builder.andWhere(`"locationService"."id" IN (:...locationServiceIds)`, {
+          locationServiceIds,
+        });
+      }
+
+      if (address) {
+        builder.andWhere(`"location"."address" ILike :address`, {
+          address: `%${address}%`,
+        });
+      }
+      if (name) {
+        builder.andWhere(`"location"."name" ILike :name`, {
+          name: `%${name}%`,
+        });
+      }
+      if (isActive !== undefined) {
+        builder.andWhere(`"location"."isActive" = :isActive`, {
+          isActive,
+        });
+      }
+
+      const [data, total] = await builder
+        .skip((page - 1) * limit)
+        .take(limit)
+        .getManyAndCount();
+
+      // const options = {
+      //   ...(address && { address: ILike(`%${address}%`) }),
+      //   ...(name && { name: ILike(`%${name}%`) }),
+      //   ...(isActive !== undefined && { isActive }),
+      //   ...(locationServiceIds && {
+      //     locationServiceIds: In<number>([...locationServiceIds]),
+      //   }),
+      // };
+
+      // const [result, total] = await Location.findAndCount({
+      //   where: options,
+      //   order: { createdAt: orderBy },
+      //   take: limit,
+      //   skip: (page - 1) * limit,
+      //   relations: ["contactInformations", "locationServices"],
+      // });
 
       const totalPages = Math.ceil(total / limit);
       if (totalPages > 0 && page > totalPages)
@@ -68,9 +127,9 @@ export class LocationResolver {
 
       return {
         message: "Get Locations successfully",
-        items: result,
+        items: data,
         page,
-        total,
+        total: total,
         totalPages,
       };
     } catch (error) {
@@ -171,6 +230,12 @@ export class LocationResolver {
             );
           }
 
+          if (existingLocation?.lat && existingLocation?.long)
+            await convertCoordToGeo(existingLocation.id, {
+              lat: existingLocation?.lat,
+              long: existingLocation?.long,
+            });
+
           return {
             message: "Update Location successfully",
             location: await existingLocation.save(),
@@ -201,7 +266,11 @@ export class LocationResolver {
               await newContactInformation.save();
             });
           }
-
+          if (newLocation?.lat && newLocation?.long)
+            await convertCoordToGeo(newLocation.id, {
+              lat: newLocation?.lat,
+              long: newLocation?.long,
+            });
           return {
             message: "Create Location successfully",
             location: await newLocation.save(),

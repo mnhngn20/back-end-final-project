@@ -162,9 +162,6 @@ export class UserResolver {
     try {
       if (!currentUser?.id) throw new Error(InternalServerError);
 
-      if (currentUser.role === USER_ROLE.Customer)
-        throw new Error(PermissionDeniedError);
-
       let options = {
         ...(email && {
           email: ILike("%" + email + "%"),

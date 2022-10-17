@@ -4,11 +4,9 @@ import {
   Column,
   CreateDateColumn,
   Entity,
-  ManyToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from "typeorm";
-import { Location } from "./Location";
 
 @ObjectType()
 @Entity()
@@ -28,10 +26,6 @@ export class LocationService extends BaseEntity {
   @Field()
   @Column()
   isActive: boolean = true;
-
-  @Field(() => [Location])
-  @ManyToMany(() => Location, (location) => location.locationServices)
-  location: Location;
 
   @Field()
   @CreateDateColumn({ type: "timestamptz" })

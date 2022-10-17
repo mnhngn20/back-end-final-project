@@ -1,4 +1,4 @@
-import { Field, InputType } from "type-graphql";
+import { Field, Float, InputType } from "type-graphql";
 import { ORDER_BY } from "../../../constants";
 
 @InputType()
@@ -20,4 +20,13 @@ export class GetLocationsInput {
 
   @Field({ nullable: true })
   address?: string;
+
+  @Field(() => [Number], { nullable: true })
+  locationServiceIds: number[];
+
+  @Field(() => Float, { nullable: true })
+  lat?: number;
+
+  @Field(() => Float, { nullable: true })
+  long?: number;
 }
