@@ -37,6 +37,10 @@ export class Location extends BaseEntity {
   address: string;
 
   @Field({ nullable: true })
+  @Column({ nullable: true })
+  electricCounterPrice?: number = 0;
+
+  @Field({ nullable: true })
   @Column({ type: "real", nullable: true })
   long?: number;
 

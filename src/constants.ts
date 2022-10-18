@@ -13,6 +13,7 @@ export enum PAYMENT_STATUS {
   Paid = "Paid",
   Unpaid = "Unpaid",
   Canceled = "Canceled",
+  MissingLivingPrice = "Missing Living Price",
 }
 
 export enum LOCATION_RESERVATION_STATUS {

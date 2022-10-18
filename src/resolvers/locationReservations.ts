@@ -14,7 +14,7 @@ import { OutOfBoundsError, PermissionDeniedError } from "../types/Errors";
 import { authMiddleware } from "../middlewares/auth-middleware";
 import { Between, LessThanOrEqual, MoreThanOrEqual } from "typeorm";
 import dayjs from "dayjs";
-import { PAYMENT_STATUS } from "../constants";
+import { PAYMENT_STATUS, ROOM_STATUS } from "../constants";
 
 @Resolver()
 export class LocationReservationResolver {
@@ -207,17 +207,17 @@ export class LocationReservationResolver {
           where: {
             locationId,
           },
-          relations: ["user"],
+          relations: ["users"],
         });
 
         currentLocationRooms.forEach(async (room) => {
-          if (room?.user?.id) {
+          if (room?.status === ROOM_STATUS.Owned) {
             const newPaymentRecord = await Payment.create({
               locationId,
               locationReservationId: newLocationReservation?.id,
               roomId: room?.id,
-              userId: room?.user?.id,
-              status: PAYMENT_STATUS.Unpaid,
+              users: room?.users,
+              status: PAYMENT_STATUS.MissingLivingPrice,
               electricCounter: 0,
               totalPrice: room?.basePrice,
               waterPrice: 0,

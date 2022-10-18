@@ -1,164 +1,293 @@
-// import { Payment } from "./../entities/Payment";
-// import { Location } from "./../entities/Location";
-// import { Context } from "./../types/Context";
-// import {
-//   Arg,
-//   Ctx,
-//   Mutation,
-//   Query,
-//   Resolver,
-//   UseMiddleware,
-// } from "type-graphql";
-// import {
-//   GetPaymentsInput,
-//   PaymentListResponse,
-//   PaymentResponse,
-//   UpdatePaymentStatusInput,
-//   UpsertPaymentInput,
-// } from "../types/payment";
-// import { AmenityType, Amenity } from "../entities";
-// import { InternalServerError, OutOfBoundsError } from "../types/Errors";
-// import { authMiddleware } from "../middlewares/auth-middleware";
-// import { ILike } from "typeorm";
+import { Payment } from "./../entities/Payment";
+import { Location } from "./../entities/Location";
+import { Arg, Mutation, Query, Resolver, UseMiddleware } from "type-graphql";
+import {
+  GetPaymentsInput,
+  PaymentListResponse,
+  PaymentResponse,
+  UpdatePaymentStatusInput,
+  UpsertPaymentInput,
+} from "../types/payment";
+import { User, Room, LocationReservation } from "../entities";
+import { OutOfBoundsError, PermissionDeniedError } from "../types/Errors";
+import { authMiddleware } from "../middlewares/auth-middleware";
+import { DISCOUNT_TYPE, PAYMENT_STATUS, ROOM_STATUS } from "../constants";
 
-// @Resolver()
-// export class PaymentResolver {
-//   @Query((_returns) => PaymentResponse)
-//   @UseMiddleware(authMiddleware)
-//   async getAmenity(@Arg("id") id: number): Promise<PaymentResponse> {
-//     try {
-//       const existingPayment = await Payment.findOne({
-//         where: { id },
-//         relations: ["location", "user", "room", "locationReservation"],
-//       });
+@Resolver()
+export class PaymentResolver {
+  @Query((_returns) => PaymentResponse)
+  @UseMiddleware(authMiddleware)
+  async getAmenity(@Arg("id") id: number): Promise<PaymentResponse> {
+    try {
+      const existingPayment = await Payment.findOne({
+        where: { id },
+        relations: ["location", "users", "room", "locationReservation"],
+      });
 
-//       if (!existingPayment) throw new Error("Payment not found");
+      if (!existingPayment) throw new Error("Payment not found");
 
-//       return {
-//         message: "Get payment successfully",
-//         payment: existingPayment,
-//       };
-//     } catch (error) {
-//       throw new Error(error);
-//     }
-//   }
+      return {
+        message: "Get payment successfully",
+        payment: existingPayment,
+      };
+    } catch (error) {
+      throw new Error(error);
+    }
+  }
 
-//   @Query((_returns) => PaymentListResponse)
-//   @UseMiddleware(authMiddleware)
-//   async getPayments(
-//     @Arg("input")
-//     { limit, page, orderBy, name, isActive }: GetPaymentsInput,
-//     @Ctx() { user }: Context
-//   ): Promise<PaymentListResponse> {
-//     try {
-//       if (!user?.id) throw new Error(InternalServerError);
+  @Query((_returns) => PaymentListResponse)
+  @UseMiddleware(authMiddleware)
+  async getPayments(
+    @Arg("input")
+    {
+      limit,
+      page,
+      orderBy,
+      locationId,
+      locationReservationId,
+      roomId,
+      status,
+      userIds,
+    }: GetPaymentsInput
+  ): Promise<PaymentListResponse> {
+    try {
+      const builder = Payment.createQueryBuilder("payment")
+        .leftJoinAndSelect("payment.users", "user")
+        .leftJoinAndSelect("payment.room", "room")
+        .leftJoinAndSelect("payment.location", "location")
+        .leftJoinAndSelect("payment.locationReservation", "locationReservation")
+        .where(`"payment"."id" IS NOT NULL`)
+        .orderBy("payment.createdAt", orderBy);
 
-//       let options = {
-//         ...(name && { name: ILike(`%${name}%`) }),
-//         ...(isActive !== undefined && isActive !== null && { isActive }),
-//         ...(amenityTypeId && { amenityTypeId }),
-//       };
+      if (userIds) {
+        builder.andWhere(`"user"."id" IN (:...userIds)`, {
+          userIds,
+        });
+      }
+      if (locationId) {
+        builder.andWhere(`"payment"."locationId" = :locationId`, {
+          locationId,
+        });
+      }
+      if (locationReservationId) {
+        builder.andWhere(
+          `"payment"."locationReservationId" = :locationReservationId`,
+          {
+            locationReservationId,
+          }
+        );
+      }
+      if (roomId) {
+        builder.andWhere(`"payment"."roomId" = :roomId`, {
+          roomId,
+        });
+      }
+      if (status) {
+        builder.andWhere(`"payment"."status" = :status`, {
+          status,
+        });
+      }
 
-//       const [result, total] = await Amenity.findAndCount({
-//         order: { createdAt: orderBy },
-//         take: limit,
-//         where: options,
-//         skip: (page - 1) * limit,
-//         relations: ["location", "amenityType"],
-//       });
+      const [data, total] = await builder
+        .skip((page - 1) * limit)
+        .take(limit)
+        .getManyAndCount();
 
-//       const totalPages = Math.ceil(total / limit);
-//       if (totalPages > 0 && page > totalPages)
-//         throw new Error(OutOfBoundsError);
+      const totalPages = Math.ceil(total / limit);
+      if (totalPages > 0 && page > totalPages)
+        throw new Error(OutOfBoundsError);
 
-//       return {
-//         message: "Get Amenities successfully",
-//         items: result,
-//         page,
-//         total,
-//         totalPages,
-//       };
-//     } catch (error) {
-//       throw new Error(error);
-//     }
-//   }
+      return {
+        message: "Get payments successfully",
+        items: data,
+        page,
+        total,
+        totalPages,
+      };
+    } catch (error) {
+      throw new Error(error);
+    }
+  }
 
-//   @Mutation((_returns) => AmenityResponse)
-//   @UseMiddleware(authMiddleware)
-//   async updateAmenityStatus(
-//     @Arg("input") { id, isActive }: UpdateAmenityStatusInput
-//   ): Promise<AmenityResponse> {
-//     try {
-//       const existingAmenity = await Amenity.findOne({
-//         where: { id },
-//         relations: ["amenityType"],
-//       });
+  @Mutation((_returns) => PaymentResponse)
+  @UseMiddleware(authMiddleware)
+  async updatePaymentStatus(
+    @Arg("input") { id, status }: UpdatePaymentStatusInput
+  ): Promise<PaymentResponse> {
+    try {
+      const existingPayment = await Payment.findOne({
+        where: { id },
+        relations: ["location", "users", "room", "locationReservation"],
+      });
 
-//       if (!existingAmenity) throw new Error("Amenity Not Found");
+      if (!existingPayment) throw new Error("Payment Not Found");
 
-//       existingAmenity.isActive = isActive;
-//       return {
-//         message: "Update Amenity Status successfully",
-//         amenity: await existingAmenity.save(),
-//       };
-//     } catch (error) {
-//       throw new Error(error);
-//     }
-//   }
+      existingPayment.status = status;
+      return {
+        message: "Update payment Status successfully",
+        payment: await existingPayment.save(),
+      };
+    } catch (error) {
+      throw new Error(error);
+    }
+  }
 
-//   @Mutation((_returns) => AmenityResponse)
-//   @UseMiddleware(authMiddleware)
-//   async upsertAmenity(
-//     @Arg("input")
-//     { id, amenityTypeId, locationId, ...rest }: UpsertAmenityInput
-//   ): Promise<AmenityResponse> {
-//     try {
-//       const existingAmenityType = await AmenityType.findOne({
-//         where: { id: amenityTypeId },
-//       });
-//       if (!existingAmenityType) throw new Error("Amenity Type Not Found");
+  @Mutation((_returns) => PaymentResponse)
+  @UseMiddleware(authMiddleware)
+  async upsertPayment(
+    @Arg("input")
+    {
+      id,
+      locationId,
+      roomId,
+      locationReservationId,
+      discount,
+      discountType,
+      electricCounter,
+      waterPrice,
+    }: UpsertPaymentInput
+  ): Promise<PaymentResponse> {
+    const existingLocation = await Location.findOne({
+      where: { id: locationId },
+    });
 
-//       if (id) {
-//         // UPDATE SECTION
-//         const existingAmenity = await Amenity.findOne({ where: { id } });
-//         if (!existingAmenity) throw new Error("Amenity Not Found");
+    if (!existingLocation) {
+      throw new Error("Location not found!");
+    }
 
-//         Amenity.merge(existingAmenity, {
-//           ...rest,
-//           amenityTypeId,
-//         });
+    const existingRoom = await Room.findOne({
+      where: {
+        id: roomId,
+      },
+    });
 
-//         return {
-//           message: "Update Amenity successfully",
-//           amenity: await existingAmenity.save(),
-//         };
-//       } else {
-//         // CREATE SECTION
-//         if (!locationId) {
-//           throw new Error("Must include locationId");
-//         }
+    if (!existingRoom) {
+      throw new Error("Room not found");
+    }
 
-//         const existingLocation = await Location.findOne({
-//           where: { id: locationId },
-//         });
+    if (existingRoom.status !== ROOM_STATUS.Owned) {
+      throw new Error("Room must have an owner to created payment");
+    }
 
-//         if (!existingLocation) {
-//           throw new Error("Location Not Found");
-//         }
+    const existingLocationReservation = await LocationReservation.findOne({
+      where: { id: locationReservationId },
+      relations: ["payments"],
+    });
 
-//         const newAmenity = await Amenity.create({
-//           ...rest,
-//           amenityTypeId,
-//           locationId,
-//         });
+    if (!existingLocationReservation) {
+      throw new Error("Location reservation not found!");
+    }
 
-//         return {
-//           message: "Create Amenity successfully",
-//           amenity: await newAmenity.save(),
-//         };
-//       }
-//     } catch (error) {
-//       throw new Error(error);
-//     }
-//   }
-// }
+    if (existingLocationReservation?.locationId !== locationId) {
+      throw new Error(PermissionDeniedError);
+    }
+
+    try {
+      if (id) {
+        // UPDATE SECTION
+        const existingPayment = await Payment.findOne({ where: { id } });
+        if (!existingPayment) throw new Error("Payment Not Found");
+
+        Payment.merge(existingPayment, {
+          locationId,
+          roomId,
+          locationReservationId,
+        });
+
+        const roomUsers = await User.find({
+          where: { roomId },
+        });
+
+        existingPayment.users = roomUsers;
+
+        let calculatedPaymentPrice = existingRoom.basePrice;
+        if (waterPrice) {
+          calculatedPaymentPrice += waterPrice;
+          existingPayment.waterPrice = waterPrice;
+        }
+        if (electricCounter) {
+          calculatedPaymentPrice +=
+            electricCounter * (existingLocation.electricCounterPrice ?? 0);
+          existingPayment.electricCounter = electricCounter;
+        }
+        if (discountType) {
+          existingPayment.discountType = discountType;
+        }
+
+        if (discount) {
+          if (
+            existingPayment.discountType === DISCOUNT_TYPE.FixedCashDiscount
+          ) {
+            calculatedPaymentPrice -= discount;
+          }
+          if (
+            existingPayment.discountType === DISCOUNT_TYPE.PercentageDiscount
+          ) {
+            calculatedPaymentPrice -= (calculatedPaymentPrice * discount) / 100;
+          }
+          existingPayment.discount = discount;
+        }
+        if (
+          !!existingPayment.discount ||
+          !!existingPayment.waterPrice ||
+          !!existingPayment.electricCounter
+        ) {
+          existingPayment.status = PAYMENT_STATUS.Unpaid;
+        }
+
+        existingPayment.totalPrice = calculatedPaymentPrice;
+
+        await existingPayment.save();
+
+        // Update total calculated price
+        let totalCalculatedPrice = 0;
+        existingLocationReservation.payments.forEach((payment) => {
+          totalCalculatedPrice += payment.totalPrice ?? 0;
+        });
+
+        existingLocationReservation.totalCalculatedPrice = totalCalculatedPrice;
+        await existingLocationReservation.save();
+
+        return {
+          message: "Update payment successfully",
+          payment: await existingPayment.save(),
+        };
+      } else {
+        // CREATE SECTION
+        const existingPaymentForLocationReservation = await Payment.findOne({
+          where: {
+            locationReservationId,
+            roomId,
+          },
+        });
+
+        if (existingPaymentForLocationReservation) {
+          throw new Error(
+            "Payment for this room in this month has been created"
+          );
+        }
+
+        const newPayment = await Payment.create({
+          totalPrice: existingRoom?.basePrice,
+          roomId,
+          locationReservationId,
+          locationId,
+          status: PAYMENT_STATUS.MissingLivingPrice,
+        });
+
+        const roomUsers = await User.find({
+          where: { roomId },
+        });
+
+        newPayment.users = roomUsers;
+
+        return {
+          message: "Create payment successfully",
+          payment: await newPayment.save(),
+        };
+      }
+    } catch (error) {
+      throw new Error(error);
+    }
+  }
+}

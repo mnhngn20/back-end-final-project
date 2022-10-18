@@ -4,10 +4,10 @@ import {
   Column,
   CreateDateColumn,
   Entity,
-  JoinColumn,
+  JoinTable,
+  ManyToMany,
   ManyToOne,
   OneToMany,
-  OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from "typeorm";
@@ -68,7 +68,8 @@ export class User extends BaseEntity {
   password: string;
 
   @Field((_type) => [Payment], { nullable: true })
-  @OneToMany(() => Payment, (payment) => payment.user)
+  @ManyToMany(() => Payment, (payment) => payment.users)
+  @JoinTable()
   payments: Payment[];
 
   @Field((_type) => [LocationReservation], { nullable: true })
@@ -87,8 +88,7 @@ export class User extends BaseEntity {
   locationId?: number;
 
   @Field((_type) => Room, { nullable: true })
-  @OneToOne(() => Room, (room) => room.user)
-  @JoinColumn({ name: "roomId" })
+  @ManyToOne(() => Room, (room) => room.users)
   room?: Room;
 
   @Field({ nullable: true })

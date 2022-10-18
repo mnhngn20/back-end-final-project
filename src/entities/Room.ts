@@ -7,7 +7,6 @@ import {
   Entity,
   ManyToOne,
   OneToMany,
-  OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from "typeorm";
@@ -63,9 +62,9 @@ export class Room extends BaseEntity {
   @ManyToOne(() => Location, (location) => location.rooms)
   location: Location;
 
-  @Field((_type) => User, { nullable: true })
-  @OneToOne(() => User, (user) => user.room)
-  user?: User;
+  @Field((_type) => [User], { nullable: true })
+  @OneToMany(() => User, (user) => user.room)
+  users?: User[];
 
   @Field((_type) => [Equipment], { nullable: true })
   @OneToMany(() => Equipment, (equipment) => equipment.room)

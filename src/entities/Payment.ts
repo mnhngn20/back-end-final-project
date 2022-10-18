@@ -5,6 +5,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  ManyToMany,
   ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
@@ -23,19 +24,19 @@ export class Payment extends BaseEntity {
 
   @Field({ nullable: true })
   @Column({ nullable: true })
-  totalPrice?: number;
+  totalPrice?: number = 0;
 
   @Field({ nullable: true })
   @Column({ nullable: true })
-  electricCounter?: number;
+  electricCounter?: number = 0;
 
   @Field({ nullable: true })
   @Column({ nullable: true })
-  waterPrice?: number;
+  waterPrice?: number = 0;
 
   @Field({ nullable: true })
   @Column({ nullable: true })
-  discount?: number;
+  discount?: number = 0;
 
   @Field(() => DISCOUNT_TYPE, { nullable: true })
   @Column({
@@ -54,13 +55,9 @@ export class Payment extends BaseEntity {
   })
   status: PAYMENT_STATUS;
 
-  @Field()
-  @Column()
-  userId: number;
-
-  @Field(() => User)
-  @ManyToOne(() => User, (user) => user.payments)
-  user: User;
+  @Field(() => [User], { nullable: true })
+  @ManyToMany(() => User, (user) => user.payments)
+  users: User[];
 
   @Field()
   @Column()

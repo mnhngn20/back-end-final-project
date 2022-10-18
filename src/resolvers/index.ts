@@ -7,3 +7,4 @@ export { AmenityTypeResolver } from "./amenityType";
 export { AmenityResolver } from "./amenity";
 export { LocationServiceResolver } from "./locationService";
 export { LocationReservationResolver } from "./locationReservations";
+export { PaymentResolver } from "./payment";

@@ -127,7 +127,7 @@ export class UserResolver {
         throw new Error(PermissionDeniedError);
 
       const existingUser = await User.findOne({
-        relations: ["location", "room"],
+        relations: ["location", "room", "payments"],
         where: { id },
       });
 
@@ -178,7 +178,7 @@ export class UserResolver {
         order: { createdAt: orderBy },
         take: limit,
         skip: (page - 1) * limit,
-        relations: ["location", "room"],
+        relations: ["location", "room", "payments"],
       });
 
       const totalPages = Math.ceil(total / limit);
@@ -312,7 +312,7 @@ export class UserResolver {
       if (!user?.id) throw new Error(InternalServerError);
 
       const targetUser = await User.findOne({
-        where: { id: id },
+        where: { id },
       });
       if (!targetUser) throw new Error(UserNotFoundError);
       if (

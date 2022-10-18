@@ -38,12 +38,20 @@ export class RoomResolver {
       if (!user?.id) throw new Error(InternalServerError);
       const existingRoom = await Room.findOne({
         where: { id },
-        relations: ["location", "equipments"],
+        relations: ["location", "equipments", "users"],
       });
       if (!existingRoom) throw new Error(RoomNotFoundError);
+      if (existingRoom.status !== ROOM_STATUS.NotAvailable) {
+        if (!existingRoom?.users?.[0]) {
+          existingRoom.status = ROOM_STATUS.Available;
+        } else {
+          existingRoom.status = ROOM_STATUS.Owned;
+        }
+      }
+
       return {
         message: "Get Room successfully",
-        room: existingRoom,
+        room: await existingRoom.save(),
       };
     } catch (error) {
       throw new Error(error);
@@ -92,7 +100,18 @@ export class RoomResolver {
         order: { createdAt: orderBy },
         take: limit,
         skip: (page - 1) * limit,
-        relations: ["location", "equipments"],
+        relations: ["location", "equipments", "users"],
+      });
+
+      result?.forEach(async (room) => {
+        if (room.status !== ROOM_STATUS.NotAvailable) {
+          if (!room?.users?.[0]) {
+            room.status = ROOM_STATUS.Available;
+          } else {
+            room.status = ROOM_STATUS.Owned;
+          }
+          await room.save();
+        }
       });
 
       const totalPages = Math.ceil(total / limit);
@@ -120,8 +139,7 @@ export class RoomResolver {
   ): Promise<RoomResponse> {
     const { id, floor, ...rest } = upsertRoomInput;
     try {
-      if (!currentUser?.id) throw new Error(InternalServerError);
-      if (currentUser.role !== USER_ROLE.Admin)
+      if (currentUser?.role !== USER_ROLE.Admin)
         throw new Error(PermissionDeniedError);
 
       if (id) {
@@ -139,7 +157,6 @@ export class RoomResolver {
         if (!currentLocation) {
           throw new Error("Location Not Found");
         }
-
         if (currentUser.locationId !== existingRoom.locationId)
           throw new Error(PermissionDeniedError);
 

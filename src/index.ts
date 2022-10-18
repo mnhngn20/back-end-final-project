@@ -20,6 +20,7 @@ import {
   AmenityResolver,
   LocationServiceResolver,
   LocationReservationResolver,
+  PaymentResolver,
 } from "./resolvers";
 import {
   Equipment,
@@ -105,6 +106,7 @@ const main = async () => {
         AmenityResolver,
         LocationServiceResolver,
         LocationReservationResolver,
+        PaymentResolver,
       ],
       validate: false,
     }),

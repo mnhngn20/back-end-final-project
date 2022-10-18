@@ -22,8 +22,8 @@ export class GetPaymentsInput {
   @Field({ nullable: true })
   roomId?: number;
 
-  @Field({ nullable: true })
-  userId?: number;
+  @Field(() => [Number], { nullable: true })
+  userIds?: number[];
 
   @Field(() => PAYMENT_STATUS, { nullable: true })
   status?: PAYMENT_STATUS;
