@@ -7,6 +7,7 @@ import {
   IncidentListResponse,
   IncidentResponse,
   UpsertIncidentInput,
+  UpdateIncidentCustomerInput,
 } from "../types/incident";
 import { User, Room } from "../entities";
 import { OutOfBoundsError } from "../types/Errors";
@@ -41,7 +42,7 @@ export class IncidentResolver {
   }
 
   @Query((_returns) => IncidentListResponse)
-  async getAmenities(
+  async getIncidents(
     @Arg("input")
     {
       limit,
@@ -108,6 +109,29 @@ export class IncidentResolver {
 
   @Mutation((_returns) => IncidentResponse)
   @UseMiddleware(authMiddleware)
+  async updateIncidentStatus(
+    @Arg("input")
+    { id, ...rest }: UpdateIncidentCustomerInput
+  ): Promise<IncidentResponse> {
+    try {
+      const existingIncident = await Incident.findOne({ where: { id } });
+      if (!existingIncident) {
+        throw new Error("Incident Not Found!");
+      }
+
+      Incident.merge(existingIncident, { ...rest });
+
+      return {
+        message: "Update Incident successfully!",
+        incident: await existingIncident.save(),
+      };
+    } catch (error) {
+      throw new Error(error);
+    }
+  }
+
+  @Mutation((_returns) => IncidentResponse)
+  @UseMiddleware(authMiddleware)
   async upsertIncident(
     @Arg("input")
     {
@@ -124,6 +148,8 @@ export class IncidentResolver {
       const existingIncidentCategory = await IncidentCategory.findOne({
         where: { id: incidentCategoryId },
       });
+      console.log(existingIncidentCategory);
+
       if (!existingIncidentCategory)
         throw new Error("Incident Category Not Found");
 
@@ -135,7 +161,7 @@ export class IncidentResolver {
       const existingCustomer = await User.findOne({
         where: { id: reporterId },
       });
-      if (!existingCustomer) throw new Error("Incident Category Not Found");
+      if (!existingCustomer) throw new Error("Customer Not Found");
 
       if (employeeId) {
         const existingEmployee = await User.findOne({
@@ -146,9 +172,9 @@ export class IncidentResolver {
 
       if (roomId) {
         const existingRoom = await Room.findOne({
-          where: { id: incidentCategoryId },
+          where: { id: roomId },
         });
-        if (!existingRoom) throw new Error("Incident Category Not Found");
+        if (!existingRoom) throw new Error("Room Not Found");
       }
 
       if (id) {
@@ -181,6 +207,8 @@ export class IncidentResolver {
         const newIncident = await Incident.create({
           ...rest,
           locationId,
+          reporterId,
+          incidentCategoryId,
         });
 
         if (employeeId) {
@@ -189,10 +217,6 @@ export class IncidentResolver {
 
         if (roomId) {
           newIncident.roomId = roomId;
-        }
-
-        if (incidentCategoryId) {
-          newIncident.incidentCategoryId = incidentCategoryId;
         }
 
         return {

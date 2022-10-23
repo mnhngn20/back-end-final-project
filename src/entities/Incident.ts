@@ -38,7 +38,7 @@ export class Incident extends BaseEntity {
   @Column({ nullable: true })
   dueDate?: Date;
 
-  @Field({ nullable: true })
+  @Field(() => INCIDENT_PRIORITY, { nullable: true })
   @Column({
     type: "enum",
     enum: INCIDENT_PRIORITY,
@@ -59,7 +59,7 @@ export class Incident extends BaseEntity {
   @Column({ nullable: true })
   reportMessage?: string;
 
-  @Field({ nullable: true })
+  @Field(() => INCIDENT_STATUS, { nullable: true })
   @Column({
     type: "enum",
     enum: INCIDENT_STATUS,
@@ -90,7 +90,7 @@ export class Incident extends BaseEntity {
   @Column()
   roomId: number;
 
-  @Field(() => IncidentCategory)
+  @Field(() => Room)
   @ManyToOne(() => Room, (room) => room.incidents)
   room: Room;
 
