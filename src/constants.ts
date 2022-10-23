@@ -16,6 +16,20 @@ export enum PAYMENT_STATUS {
   MissingLivingPrice = "Missing Living Price",
 }
 
+export enum INCIDENT_STATUS {
+  ToDo = "To Do",
+  InProgress = "In Progress",
+  Cancel = "Cancel",
+  Done = "Done",
+}
+
+export enum INCIDENT_PRIORITY {
+  Low = "Low",
+  Medium = "Medium",
+  High = "High",
+  Urgent = "Urgent",
+}
+
 export enum LOCATION_RESERVATION_STATUS {
   Draft = "Draft",
   Published = "Published",
@@ -44,6 +58,12 @@ export enum USER_ROLE {
 
 registerEnumType(ORDER_BY, {
   name: "ORDER_BY",
+});
+registerEnumType(INCIDENT_STATUS, {
+  name: "INCIDENT_STATUS",
+});
+registerEnumType(INCIDENT_PRIORITY, {
+  name: "INCIDENT_PRIORITY",
 });
 registerEnumType(ROOM_STATUS, {
   name: "ROOM_STATUS",

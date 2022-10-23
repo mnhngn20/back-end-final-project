@@ -21,6 +21,8 @@ import {
   LocationServiceResolver,
   LocationReservationResolver,
   PaymentResolver,
+  IncidentCategoryResolver,
+  IncidentResolver,
 } from "./resolvers";
 import {
   Equipment,
@@ -33,6 +35,8 @@ import {
   LocationService,
   LocationReservation,
   Payment,
+  Incident,
+  IncidentCategory,
 } from "./entities";
 import NotificationHelper from "./utils/common/notificationHelper";
 import dayjs from "dayjs";
@@ -59,6 +63,8 @@ export const dataSource = new DataSource({
     LocationService,
     LocationReservation,
     Payment,
+    Incident,
+    IncidentCategory,
   ],
 });
 
@@ -107,6 +113,8 @@ const main = async () => {
         LocationServiceResolver,
         LocationReservationResolver,
         PaymentResolver,
+        IncidentCategoryResolver,
+        IncidentResolver,
       ],
       validate: false,
     }),

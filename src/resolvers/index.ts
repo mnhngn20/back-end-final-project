@@ -8,3 +8,5 @@ export { AmenityResolver } from "./amenity";
 export { LocationServiceResolver } from "./locationService";
 export { LocationReservationResolver } from "./locationReservations";
 export { PaymentResolver } from "./payment";
+export { IncidentResolver } from "./incident";
+export { IncidentCategoryResolver } from "./incidentCategory";

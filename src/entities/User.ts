@@ -16,6 +16,7 @@ import { USER_ROLE } from "../constants";
 import { Room } from "./Room";
 import { Payment } from "./Payment";
 import { LocationReservation } from "./LocationReservation";
+import { Incident } from "./Incident";
 
 @ObjectType()
 @Entity()
@@ -90,6 +91,14 @@ export class User extends BaseEntity {
   @Field((_type) => Room, { nullable: true })
   @ManyToOne(() => Room, (room) => room.users)
   room?: Room;
+
+  @Field((_type) => [Incident], { nullable: true })
+  @OneToMany(() => Incident, (incident) => incident.reporter)
+  reportIncidents?: Incident;
+
+  @Field((_type) => [Incident], { nullable: true })
+  @OneToMany(() => Incident, (incident) => incident.employee)
+  employeeIncidents?: Incident;
 
   @Field({ nullable: true })
   @Column({ nullable: true })

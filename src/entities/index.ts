@@ -8,3 +8,5 @@ export { AmenityType } from "./AmenityType";
 export { LocationService } from "./LocationService";
 export { Payment } from "./Payment";
 export { LocationReservation } from "./LocationReservation";
+export { Incident } from "./Incident";
+export { IncidentCategory } from "./IncidentCategory";

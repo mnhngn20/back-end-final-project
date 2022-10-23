@@ -20,6 +20,7 @@ import { GraphQLJSONObject } from "graphql-type-json";
 import { Geometry } from "geojson";
 import { Payment } from "./Payment";
 import { LocationReservation } from "./LocationReservation";
+import { Incident } from "./Incident";
 
 @ObjectType()
 @Entity()
@@ -113,6 +114,10 @@ export class Location extends BaseEntity {
   @Field(() => [Amenity])
   @OneToMany(() => Amenity, (amenity) => amenity.location)
   amenities: Amenity[];
+
+  @Field(() => [Incident])
+  @OneToMany(() => Incident, (incident) => incident.location)
+  incidents: Incident[];
 
   @Field((_type) => [LocationReservation], { nullable: true })
   @OneToMany(

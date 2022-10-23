@@ -1,3 +1,4 @@
+import { Incident } from "./Incident";
 import { ROOM_STATUS } from "../constants";
 import { Field, ID, ObjectType } from "type-graphql";
 import {
@@ -73,6 +74,10 @@ export class Room extends BaseEntity {
   @Field((_type) => [Equipment], { nullable: true })
   @OneToMany(() => Equipment, (equipment) => equipment.room)
   equipments: Equipment[];
+
+  @Field((_type) => [Incident], { nullable: true })
+  @OneToMany(() => Incident, (incident) => incident.room)
+  incidents: Incident[];
 
   @Field((_type) => [Payment], { nullable: true })
   @OneToMany(() => Payment, (payment) => payment.room)
