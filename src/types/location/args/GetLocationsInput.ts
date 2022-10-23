@@ -29,4 +29,7 @@ export class GetLocationsInput {
 
   @Field(() => Float, { nullable: true })
   long?: number;
+
+  @Field(() => Float, { nullable: true })
+  distance?: number;
 }

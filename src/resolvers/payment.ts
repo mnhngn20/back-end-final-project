@@ -17,7 +17,7 @@ import { DISCOUNT_TYPE, PAYMENT_STATUS, ROOM_STATUS } from "../constants";
 export class PaymentResolver {
   @Query((_returns) => PaymentResponse)
   @UseMiddleware(authMiddleware)
-  async getAmenity(@Arg("id") id: number): Promise<PaymentResponse> {
+  async getPayment(@Arg("id") id: number): Promise<PaymentResponse> {
     try {
       const existingPayment = await Payment.findOne({
         where: { id },
@@ -145,6 +145,8 @@ export class PaymentResolver {
       discountType,
       electricCounter,
       waterPrice,
+      extraFee,
+      prePaidFee,
     }: UpsertPaymentInput
   ): Promise<PaymentResponse> {
     const existingLocation = await Location.findOne({
@@ -227,10 +229,22 @@ export class PaymentResolver {
           }
           existingPayment.discount = discount;
         }
+
+        if (extraFee) {
+          existingPayment.extraFee = extraFee;
+          calculatedPaymentPrice += extraFee;
+        }
+
+        if (prePaidFee) {
+          existingPayment.prePaidFee = prePaidFee;
+          calculatedPaymentPrice -= prePaidFee;
+        }
         if (
           !!existingPayment.discount ||
           !!existingPayment.waterPrice ||
-          !!existingPayment.electricCounter
+          !!existingPayment.electricCounter ||
+          existingPayment.extraFee ||
+          existingPayment.prePaidFee
         ) {
           existingPayment.status = PAYMENT_STATUS.Unpaid;
         }
@@ -238,11 +252,17 @@ export class PaymentResolver {
         existingPayment.totalPrice = calculatedPaymentPrice;
 
         await existingPayment.save();
-
         // Update total calculated price
         let totalCalculatedPrice = 0;
         existingLocationReservation.payments.forEach((payment) => {
-          totalCalculatedPrice += payment.totalPrice ?? 0;
+          if (payment?.id === existingPayment?.id) {
+            totalCalculatedPrice +=
+              (existingPayment.totalPrice ?? 0) +
+              (existingPayment.prePaidFee ?? 0);
+          } else {
+            totalCalculatedPrice +=
+              (payment.totalPrice ?? 0) + (payment.prePaidFee ?? 0);
+          }
         });
 
         existingLocationReservation.totalCalculatedPrice = totalCalculatedPrice;

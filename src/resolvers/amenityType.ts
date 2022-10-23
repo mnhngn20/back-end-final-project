@@ -12,11 +12,7 @@ import {
 import { authMiddleware } from "../middlewares/auth-middleware";
 import { Context } from "../types/Context";
 import { USER_ROLE } from "../constants";
-import {
-  InternalServerError,
-  OutOfBoundsError,
-  PermissionDeniedError,
-} from "../types/Errors";
+import { OutOfBoundsError, PermissionDeniedError } from "../types/Errors";
 import { AmenityType } from "../entities";
 import { ILike } from "typeorm";
 import { UpsertAmenityTypeInput } from "./../types/amenityType/args/UpsertAmenityTypeInput";
@@ -24,7 +20,6 @@ import { UpsertAmenityTypeInput } from "./../types/amenityType/args/UpsertAmenit
 @Resolver()
 export class AmenityTypeResolver {
   @Query((_returns) => AmenityTypeResponse)
-  @UseMiddleware(authMiddleware)
   async getAmenityType(
     @Arg("id")
     id: number
@@ -45,16 +40,11 @@ export class AmenityTypeResolver {
   }
 
   @Query((_returns) => AmenityTypeListResponse)
-  @UseMiddleware(authMiddleware)
   async getAmenityTypes(
     @Arg("input")
-    { limit, orderBy, page, name }: GetAmenityTypesInput,
-    @Ctx()
-    { user }: Context
+    { limit, orderBy, page, name }: GetAmenityTypesInput
   ): Promise<AmenityTypeListResponse> {
     try {
-      if (!user?.id) throw new Error(InternalServerError);
-
       const options = {
         ...(name && {
           name: ILike(`%${name}%`),

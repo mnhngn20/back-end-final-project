@@ -25,15 +25,23 @@ export class LocationReservationResolver {
     try {
       const existingLocationReservation = await LocationReservation.findOne({
         where: { id },
-        relations: ["location", "createdBy"],
+        relations: ["location", "createdBy", "payments"],
       });
 
       if (!existingLocationReservation)
         throw new Error("Location reservation not found");
 
+      //Update Location Reservation total calculated price
+      let totalCalculatedPrice = 0;
+      existingLocationReservation.payments.forEach((payment) => {
+        totalCalculatedPrice +=
+          (payment.totalPrice ?? 0) + (payment.prePaidFee ?? 0);
+      });
+      existingLocationReservation.totalCalculatedPrice = totalCalculatedPrice;
+
       return {
         message: "Get location reservation successfully!",
-        locationReservation: existingLocationReservation,
+        locationReservation: await existingLocationReservation.save(),
       };
     } catch (error) {
       throw new Error(error);
@@ -58,8 +66,8 @@ export class LocationReservationResolver {
       let options = {
         ...(createdById && { createdById }),
         ...(locationId && { locationId }),
-        ...(fromDate && { startDate: LessThanOrEqual(fromDate) }),
-        ...(toDate && { startDate: MoreThanOrEqual(toDate) }),
+        ...(fromDate && { startDate: MoreThanOrEqual(fromDate) }),
+        ...(toDate && { startDate: LessThanOrEqual(toDate) }),
         ...(status && { status }),
       };
 
@@ -221,6 +229,8 @@ export class LocationReservationResolver {
               electricCounter: 0,
               totalPrice: room?.basePrice,
               waterPrice: 0,
+              extraFee: 0,
+              prePaidFee: 0,
             });
 
             await newPaymentRecord.save();

@@ -13,6 +13,12 @@ export class UpsertPaymentInput {
   waterPrice?: number;
 
   @Field({ nullable: true })
+  extraFee?: number;
+
+  @Field({ nullable: true })
+  prePaidFee?: number;
+
+  @Field({ nullable: true })
   discount?: number;
 
   @Field(() => DISCOUNT_TYPE, { nullable: true })

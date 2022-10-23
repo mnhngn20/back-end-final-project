@@ -36,6 +36,14 @@ export class Payment extends BaseEntity {
 
   @Field({ nullable: true })
   @Column({ nullable: true })
+  extraFee?: number = 0;
+
+  @Field({ nullable: true })
+  @Column({ nullable: true })
+  prePaidFee?: number = 0;
+
+  @Field({ nullable: true })
+  @Column({ nullable: true })
   discount?: number = 0;
 
   @Field(() => DISCOUNT_TYPE, { nullable: true })

@@ -1,13 +1,5 @@
 import { Location } from "./../entities/Location";
-import { Context } from "./../types/Context";
-import {
-  Arg,
-  Ctx,
-  Mutation,
-  Query,
-  Resolver,
-  UseMiddleware,
-} from "type-graphql";
+import { Arg, Mutation, Query, Resolver, UseMiddleware } from "type-graphql";
 import {
   AmenityListResponse,
   AmenityResponse,
@@ -16,14 +8,13 @@ import {
   UpsertAmenityInput,
 } from "../types/amenity";
 import { AmenityType, Amenity } from "../entities";
-import { InternalServerError, OutOfBoundsError } from "../types/Errors";
+import { OutOfBoundsError } from "../types/Errors";
 import { authMiddleware } from "../middlewares/auth-middleware";
 import { ILike } from "typeorm";
 
 @Resolver()
 export class AmenityResolver {
   @Query((_returns) => AmenityResponse)
-  @UseMiddleware(authMiddleware)
   async getAmenity(@Arg("id") id: number): Promise<AmenityResponse> {
     try {
       const existingAmenity = await Amenity.findOne({
@@ -43,15 +34,11 @@ export class AmenityResolver {
   }
 
   @Query((_returns) => AmenityListResponse)
-  @UseMiddleware(authMiddleware)
   async getAmenities(
     @Arg("input")
-    { limit, page, orderBy, name, isActive, amenityTypeId }: GetAmenitiesInput,
-    @Ctx() { user }: Context
+    { limit, page, orderBy, name, isActive, amenityTypeId }: GetAmenitiesInput
   ): Promise<AmenityListResponse> {
     try {
-      if (!user?.id) throw new Error(InternalServerError);
-
       let options = {
         ...(name && { name: ILike(`%${name}%`) }),
         ...(isActive !== undefined && isActive !== null && { isActive }),

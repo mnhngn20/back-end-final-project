@@ -30,6 +30,10 @@ export class Room extends BaseEntity {
   @Column({ nullable: true })
   floor?: number;
 
+  @Field({ nullable: true })
+  @Column({ nullable: true })
+  capacity?: number = 1;
+
   @Field()
   @Column()
   locationId: number;

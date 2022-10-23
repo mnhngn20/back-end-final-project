@@ -29,7 +29,7 @@ export class LocationResolver {
     try {
       const existingLocation = await Location.findOne({
         where: { id },
-        relations: ["contactInformations", "locationServices"],
+        relations: ["contactInformations", "locationServices", "amenities"],
       });
       if (!existingLocation) throw new Error("Location Not Found");
       return {
@@ -53,6 +53,7 @@ export class LocationResolver {
       page,
       locationServiceIds,
       lat,
+      distance,
       long,
     }: GetLocationsInput
   ): Promise<LocationListResponse> {
@@ -63,6 +64,7 @@ export class LocationResolver {
           "contactInformations"
         )
         .leftJoinAndSelect("location.locationServices", "locationService")
+        .leftJoinAndSelect("location.amenities", "amenity")
         .where(`"location"."id" IS NOT NULL`)
         .orderBy("location.createdAt", orderBy);
 
@@ -72,7 +74,7 @@ export class LocationResolver {
           {
             longitude: long,
             latitude: lat,
-            distance: 20000, //meter
+            distance: distance ?? 20000, //meter
           }
         );
       }
@@ -103,23 +105,6 @@ export class LocationResolver {
         .skip((page - 1) * limit)
         .take(limit)
         .getManyAndCount();
-
-      // const options = {
-      //   ...(address && { address: ILike(`%${address}%`) }),
-      //   ...(name && { name: ILike(`%${name}%`) }),
-      //   ...(isActive !== undefined && { isActive }),
-      //   ...(locationServiceIds && {
-      //     locationServiceIds: In<number>([...locationServiceIds]),
-      //   }),
-      // };
-
-      // const [result, total] = await Location.findAndCount({
-      //   where: options,
-      //   order: { createdAt: orderBy },
-      //   take: limit,
-      //   skip: (page - 1) * limit,
-      //   relations: ["contactInformations", "locationServices"],
-      // });
 
       const totalPages = Math.ceil(total / limit);
       if (totalPages > 0 && page > totalPages)

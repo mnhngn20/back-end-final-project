@@ -16,7 +16,13 @@ export class UpsertLocationInput {
   images?: string;
 
   @Field({ nullable: true })
+  minPrice?: number;
+
+  @Field({ nullable: true })
   thumbnail?: string;
+
+  @Field({ nullable: true })
+  electricCounterPrice: number;
 
   @Field()
   numOfFloor: number;

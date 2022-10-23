@@ -15,6 +15,9 @@ export class UpsertRoomInput {
   floor?: number;
 
   @Field({ nullable: true })
+  capacity?: number;
+
+  @Field({ nullable: true })
   description?: string;
 
   @Field({ nullable: true })

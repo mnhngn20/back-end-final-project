@@ -11,6 +11,9 @@ export class UpsertAmenityInput {
   @Field({ nullable: true })
   description?: string;
 
+  @Field({ nullable: true })
+  image?: string;
+
   @Field()
   amenityTypeId: number;
 

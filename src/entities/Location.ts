@@ -74,6 +74,10 @@ export class Location extends BaseEntity {
   @Column({ nullable: true })
   numOfFloor?: number;
 
+  @Field({ nullable: true })
+  @Column({ nullable: true })
+  minPrice?: number = 1000000;
+
   @Field()
   @Column()
   income: number = 0;

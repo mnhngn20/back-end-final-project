@@ -8,7 +8,6 @@ import {
 } from "type-graphql";
 import { Room } from "../entities/Room";
 import {
-  InternalServerError,
   LocationNotFoundError,
   OutOfBoundsError,
   PermissionDeniedError,
@@ -29,13 +28,8 @@ import { Location } from "../entities";
 @Resolver()
 export class RoomResolver {
   @Query((_returns) => RoomResponse)
-  @UseMiddleware(authMiddleware)
-  async getRoom(
-    @Arg("id") id: number,
-    @Ctx() { user }: Context
-  ): Promise<RoomResponse> {
+  async getRoom(@Arg("id") id: number): Promise<RoomResponse> {
     try {
-      if (!user?.id) throw new Error(InternalServerError);
       const existingRoom = await Room.findOne({
         where: { id },
         relations: ["location", "equipments", "users"],
@@ -59,7 +53,6 @@ export class RoomResolver {
   }
 
   @Query((_returns) => RoomListResponse)
-  @UseMiddleware(authMiddleware)
   async getRooms(
     @Arg("input")
     {
@@ -72,12 +65,9 @@ export class RoomResolver {
       minBasePrice,
       maxBasePrice,
       floor,
-    }: GetRoomsInput,
-    @Ctx() { user }: Context
+    }: GetRoomsInput
   ): Promise<RoomListResponse> {
     try {
-      if (!user?.id) throw new Error(InternalServerError);
-
       const options = {
         ...(status && { status }),
         ...(minBasePrice !== undefined &&
