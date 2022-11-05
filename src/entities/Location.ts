@@ -21,6 +21,7 @@ import { Geometry } from "geojson";
 import { Payment } from "./Payment";
 import { LocationReservation } from "./LocationReservation";
 import { Incident } from "./Incident";
+import { Notification } from "./Notification";
 
 @ObjectType()
 @Entity()
@@ -114,6 +115,10 @@ export class Location extends BaseEntity {
   @Field(() => [Amenity])
   @OneToMany(() => Amenity, (amenity) => amenity.location)
   amenities: Amenity[];
+
+  @Field(() => [Notification])
+  @OneToMany(() => Notification, (notification) => notification.location)
+  notification: Notification[];
 
   @Field(() => [Incident])
   @OneToMany(() => Incident, (incident) => incident.location)

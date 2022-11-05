@@ -23,6 +23,7 @@ import {
   PaymentResolver,
   IncidentCategoryResolver,
   IncidentResolver,
+  NotificationResolver,
 } from "./resolvers";
 import {
   Equipment,
@@ -37,8 +38,8 @@ import {
   Payment,
   Incident,
   IncidentCategory,
+  Notification,
 } from "./entities";
-import NotificationHelper from "./utils/common/notificationHelper";
 import dayjs from "dayjs";
 
 dayjs.extend(utc);
@@ -65,6 +66,7 @@ export const dataSource = new DataSource({
     Payment,
     Incident,
     IncidentCategory,
+    Notification,
   ],
 });
 
@@ -75,6 +77,8 @@ const main = async () => {
     process.env.CORS_ORIGIN_DEV,
     process.env.CORS_ORIGIN_API_PROD,
     process.env.CORS_ORIGIN_API_DEV,
+    "http://localhost:3001",
+    "http://localhost:3002",
     "https://www.supercode.co.za",
   ];
   const corsOptions: cors.CorsOptions = {
@@ -115,6 +119,7 @@ const main = async () => {
         PaymentResolver,
         IncidentCategoryResolver,
         IncidentResolver,
+        NotificationResolver,
       ],
       validate: false,
     }),
@@ -133,7 +138,6 @@ const main = async () => {
 
   // SECTION: INIT SERVICES
   console.log(">>> Initializing Firebase FCM...");
-  NotificationHelper.init();
 
   // SECTION: START EXPRESS SERVER
   console.log(">>> Starting server...");

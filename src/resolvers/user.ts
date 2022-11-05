@@ -44,8 +44,6 @@ export class UserResolver {
         relations: ["location", "room"],
       });
 
-      console.log(existingUser);
-
       if (!existingUser) throw new Error(UserNotFoundError);
 
       return {

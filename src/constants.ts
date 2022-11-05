@@ -23,6 +23,13 @@ export enum INCIDENT_STATUS {
   Done = "Done",
 }
 
+export enum NOTIFICATION_TYPE {
+  Payment = "Payment",
+  Announcement = "Announcement",
+  Incident = "Incident",
+  Other = "Other",
+}
+
 export enum INCIDENT_PRIORITY {
   Low = "Low",
   Medium = "Medium",
@@ -58,6 +65,9 @@ export enum USER_ROLE {
 
 registerEnumType(ORDER_BY, {
   name: "ORDER_BY",
+});
+registerEnumType(NOTIFICATION_TYPE, {
+  name: "NOTIFICATION_TYPE",
 });
 registerEnumType(INCIDENT_STATUS, {
   name: "INCIDENT_STATUS",

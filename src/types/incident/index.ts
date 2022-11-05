@@ -1,7 +1,7 @@
 // Args
 export { UpsertIncidentInput } from "./args/UpsertIncidentInput";
 export { GetIncidentsInput } from "./args/GetIncidentsInput";
-export { UpdateIncidentCustomerInput } from "./args/UpdateIncidentCustomerInput";
+export { UpdateIncidentForEmployeeInput } from "./args/UpdateIncidentForEmployeeInput";
 
 // Response
 export { IncidentResponse } from "./response/IncidentReponse";

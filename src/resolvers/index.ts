@@ -10,3 +10,4 @@ export { LocationReservationResolver } from "./locationReservations";
 export { PaymentResolver } from "./payment";
 export { IncidentResolver } from "./incident";
 export { IncidentCategoryResolver } from "./incidentCategory";
+export { NotificationResolver } from "./notification";

@@ -38,6 +38,10 @@ export class Incident extends BaseEntity {
   @Column({ nullable: true })
   dueDate?: Date;
 
+  @Field({ nullable: true })
+  @Column({ nullable: true })
+  completedDate?: Date;
+
   @Field(() => INCIDENT_PRIORITY, { nullable: true })
   @Column({
     type: "enum",

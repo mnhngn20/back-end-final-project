@@ -1,8 +1,8 @@
 import { Field, InputType } from "type-graphql";
-import { INCIDENT_STATUS } from "../../../constants";
+import { INCIDENT_PRIORITY, INCIDENT_STATUS } from "../../../constants";
 
 @InputType()
-export class UpdateIncidentCustomerInput {
+export class UpdateIncidentForEmployeeInput {
   @Field()
   id: number;
 
@@ -17,4 +17,7 @@ export class UpdateIncidentCustomerInput {
 
   @Field({ nullable: true })
   reportImages?: string;
+
+  @Field({ nullable: true })
+  priority?: INCIDENT_PRIORITY;
 }

@@ -1,3 +1,4 @@
+import dayjs from "dayjs";
 import { IncidentCategory } from "./../entities/IncidentCategory";
 import { Incident } from "./../entities/Incident";
 import { Location } from "./../entities/Location";
@@ -7,12 +8,14 @@ import {
   IncidentListResponse,
   IncidentResponse,
   UpsertIncidentInput,
-  UpdateIncidentCustomerInput,
+  UpdateIncidentForEmployeeInput,
 } from "../types/incident";
 import { User, Room } from "../entities";
 import { OutOfBoundsError } from "../types/Errors";
 import { authMiddleware } from "../middlewares/auth-middleware";
 import { ILike, MoreThanOrEqual } from "typeorm";
+import { INCIDENT_STATUS, NOTIFICATION_TYPE } from "../constants";
+import { createAndPushNotification } from "../services/notification.service";
 
 @Resolver()
 export class IncidentResolver {
@@ -109,14 +112,39 @@ export class IncidentResolver {
 
   @Mutation((_returns) => IncidentResponse)
   @UseMiddleware(authMiddleware)
-  async updateIncidentStatus(
+  async updateIncidentForEmployee(
     @Arg("input")
-    { id, ...rest }: UpdateIncidentCustomerInput
+    { id, status, ...rest }: UpdateIncidentForEmployeeInput
   ): Promise<IncidentResponse> {
     try {
-      const existingIncident = await Incident.findOne({ where: { id } });
+      const existingIncident = await Incident.findOne({
+        where: { id },
+        relations: ["employee", "reporter"],
+      });
       if (!existingIncident) {
         throw new Error("Incident Not Found!");
+      }
+      if (status) {
+        if (status === INCIDENT_STATUS.Done) {
+          console.log(status);
+
+          if (!existingIncident.employeeId)
+            throw new Error("Incident cannot complete with employee");
+          const completedDate = dayjs().toDate();
+          existingIncident.completedDate = completedDate;
+
+          createAndPushNotification(
+            {
+              content: `${existingIncident?.employee?.name} has completed your incident. Please check it again!`,
+              title: `Complete Incident`,
+              type: NOTIFICATION_TYPE.Incident,
+              userId: existingIncident?.reporterId,
+              dataId: existingIncident?.id,
+            },
+            [existingIncident.reporter]
+          );
+        }
+        existingIncident.status = status;
       }
 
       Incident.merge(existingIncident, { ...rest });
@@ -141,6 +169,7 @@ export class IncidentResolver {
       incidentCategoryId,
       reporterId,
       roomId,
+      status,
       ...rest
     }: UpsertIncidentInput
   ): Promise<IncidentResponse> {
@@ -148,7 +177,6 @@ export class IncidentResolver {
       const existingIncidentCategory = await IncidentCategory.findOne({
         where: { id: incidentCategoryId },
       });
-      console.log(existingIncidentCategory);
 
       if (!existingIncidentCategory)
         throw new Error("Incident Category Not Found");
@@ -179,7 +207,10 @@ export class IncidentResolver {
 
       if (id) {
         // UPDATE SECTION
-        const existingIncident = await Incident.findOne({ where: { id } });
+        const existingIncident = await Incident.findOne({
+          where: { id },
+          relations: ["employee", "reporter"],
+        });
         if (!existingIncident) throw new Error("Incident Not Found");
 
         Incident.merge(existingIncident, {
@@ -196,6 +227,29 @@ export class IncidentResolver {
 
         if (incidentCategoryId) {
           existingIncident.incidentCategoryId = incidentCategoryId;
+        }
+
+        if (status) {
+          if (status === INCIDENT_STATUS.Done) {
+            console.log(status);
+
+            if (!existingIncident.employeeId)
+              throw new Error("Incident cannot complete with employee");
+            const completedDate = dayjs().toDate();
+            existingIncident.completedDate = completedDate;
+
+            createAndPushNotification(
+              {
+                content: `${existingIncident?.employee?.name} has completed your incident. Please check it again!`,
+                title: `Complete Incident`,
+                type: NOTIFICATION_TYPE.Incident,
+                userId: existingIncident?.reporterId,
+                dataId: existingIncident?.id,
+              },
+              [existingIncident.reporter]
+            );
+          }
+          existingIncident.status = status;
         }
 
         return {

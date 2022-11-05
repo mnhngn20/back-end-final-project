@@ -17,6 +17,7 @@ import { Room } from "./Room";
 import { Payment } from "./Payment";
 import { LocationReservation } from "./LocationReservation";
 import { Incident } from "./Incident";
+import { Notification } from "./Notification";
 
 @ObjectType()
 @Entity()
@@ -36,6 +37,10 @@ export class User extends BaseEntity {
   @Field({ nullable: true })
   @Column({ nullable: true })
   address?: string;
+
+  @Field({ nullable: true })
+  @Column({ nullable: true })
+  firebaseToken?: string;
 
   @Field({ nullable: true })
   @Column({ nullable: true })
@@ -79,6 +84,10 @@ export class User extends BaseEntity {
     (locationReservation) => locationReservation.createdBy
   )
   locationReservations: LocationReservation[];
+
+  @Field((_type) => [Notification], { nullable: true })
+  @OneToMany(() => Notification, (notification) => notification.user)
+  notification: Notification[];
 
   @Field((_type) => Location, { nullable: true })
   @ManyToOne(() => Location, (location) => location.users)
