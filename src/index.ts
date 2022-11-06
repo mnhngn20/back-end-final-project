@@ -24,6 +24,7 @@ import {
   IncidentCategoryResolver,
   IncidentResolver,
   NotificationResolver,
+  StripeResolver,
 } from "./resolvers";
 import {
   Equipment,
@@ -120,6 +121,7 @@ const main = async () => {
         IncidentCategoryResolver,
         IncidentResolver,
         NotificationResolver,
+        StripeResolver,
       ],
       validate: false,
     }),

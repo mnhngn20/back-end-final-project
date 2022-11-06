@@ -12,7 +12,7 @@ export const platformMiddleware: MiddlewareFn<Context> = async (
 
     if (!platform || !PLATFORM.includes(platform as USER_ROLE)) {
       throw new AuthenticationError(
-        `Platform must be in ["SuperAdmin", "Admin", "Client"]`
+        `Platform must be in ["SuperAdmin", "Admin", "Customer"]`
       );
     }
 

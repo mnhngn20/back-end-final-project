@@ -18,11 +18,12 @@ export async function createAndPushNotification(
 
   const message = {
     data: {
-      content: notificationInput.content ?? "",
-      title: notificationInput.title ?? "",
-      type: notificationInput.type ?? "",
-      dataId: notificationInput.dataId?.toString() ?? "",
-      userId: notificationInput.userId?.toString() ?? "",
+      id: String(newNotification?.id ?? ""),
+      content: newNotification.content ?? "",
+      title: newNotification.title ?? "",
+      type: newNotification.type ?? "",
+      dataId: newNotification.dataId?.toString() ?? "",
+      userId: newNotification.userId?.toString() ?? "",
       createdAt: newNotification?.createdAt?.toString() ?? "",
     },
     tokens: users

@@ -6,3 +6,4 @@ export { CreateInstallationInput } from "./args/CreateInstallationInput";
 
 // Response
 export { NotificationListResponse } from "./response/NotificationListResponse";
+export { GetMyNotificationStatusResponse } from "./response/GetMyNotificationStatusResponse";

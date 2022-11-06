@@ -1,10 +1,19 @@
+import { Context } from "./../types/Context";
 import { OutOfBoundsError } from "./../types/Errors";
 import { GetNotificationsInput } from "./../types/notification/args/GetNotificationsInput";
 import {
   CreateInstallationInput,
+  GetMyNotificationStatusResponse,
   NotificationListResponse,
 } from "./../types/notification/";
-import { Arg, Mutation, Query, Resolver, UseMiddleware } from "type-graphql";
+import {
+  Arg,
+  Ctx,
+  Mutation,
+  Query,
+  Resolver,
+  UseMiddleware,
+} from "type-graphql";
 import { Notification, User } from "../entities";
 import { authMiddleware } from "../middlewares/auth-middleware";
 
@@ -62,28 +71,51 @@ export class NotificationResolver {
       throw new Error(error);
     }
   }
-  // @Mutation((_returns) => AmenityResponse)
-  // @UseMiddleware(authMiddleware)
-  // async updateAmenityStatus(
-  //   @Arg("input") { id, isActive }: UpdateAmenityStatusInput
-  // ): Promise<AmenityResponse> {
-  //   try {
-  //     const existingAmenity = await Amenity.findOne({
-  //       where: { id },
-  //       relations: ["amenityType"],
-  //     });
 
-  //     if (!existingAmenity) throw new Error("Amenity Not Found");
+  @Query((_returns) => GetMyNotificationStatusResponse)
+  @UseMiddleware(authMiddleware)
+  async getMyNotificationStatus(
+    @Ctx() { user }: Context
+  ): Promise<GetMyNotificationStatusResponse> {
+    try {
+      const [_, total] = await Notification.findAndCount({
+        where: {
+          isRead: false,
+          userId: user?.id,
+        },
+      });
+      return {
+        message: "Get Notification Status successfully",
+        total,
+      };
+    } catch (error) {
+      throw new Error(error);
+    }
+  }
 
-  //     existingAmenity.isActive = isActive;
-  //     return {
-  //       message: "Update Amenity Status successfully",
-  //       amenity: await existingAmenity.save(),
-  //     };
-  //   } catch (error) {
-  //     throw new Error(error);
-  //   }
-  // }
+  @Mutation((_returns) => String)
+  @UseMiddleware(authMiddleware)
+  async readNotification(@Arg("id") id: number): Promise<string> {
+    try {
+      const existingNotification = await Notification.findOne({
+        where: {
+          id,
+        },
+      });
+
+      if (!existingNotification) {
+        throw new Error("Notification not found");
+      }
+
+      existingNotification.isRead = true;
+
+      await existingNotification.save();
+
+      return "Read Notification successfully";
+    } catch (error) {
+      throw new Error(error);
+    }
+  }
 
   @Mutation((_returns) => String)
   @UseMiddleware(authMiddleware)

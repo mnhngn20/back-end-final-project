@@ -37,6 +37,10 @@ export class Notification extends BaseEntity {
 
   @Field({ nullable: true })
   @Column({ nullable: true })
+  isRead?: boolean = false;
+
+  @Field({ nullable: true })
+  @Column({ nullable: true })
   image?: string;
 
   @Field({ nullable: true })

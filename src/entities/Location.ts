@@ -70,6 +70,10 @@ export class Location extends BaseEntity {
 
   @Field({ nullable: true })
   @Column({ nullable: true })
+  stripeAccountId?: string;
+
+  @Field({ nullable: true })
+  @Column({ nullable: true })
   description?: string;
 
   @Field({ nullable: true })

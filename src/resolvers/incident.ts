@@ -135,7 +135,7 @@ export class IncidentResolver {
 
           createAndPushNotification(
             {
-              content: `${existingIncident?.employee?.name} has completed your incident. Please check it again!`,
+              content: `${existingIncident?.employee?.name} has completed your incident. Thank you for reporting!`,
               title: `Complete Incident`,
               type: NOTIFICATION_TYPE.Incident,
               userId: existingIncident?.reporterId,
@@ -231,8 +231,6 @@ export class IncidentResolver {
 
         if (status) {
           if (status === INCIDENT_STATUS.Done) {
-            console.log(status);
-
             if (!existingIncident.employeeId)
               throw new Error("Incident cannot complete with employee");
             const completedDate = dayjs().toDate();
@@ -240,7 +238,7 @@ export class IncidentResolver {
 
             createAndPushNotification(
               {
-                content: `${existingIncident?.employee?.name} has completed your incident. Please check it again!`,
+                content: `${existingIncident?.employee?.name} has completed your incident. Thank you for reporting!`,
                 title: `Complete Incident`,
                 type: NOTIFICATION_TYPE.Incident,
                 userId: existingIncident?.reporterId,
