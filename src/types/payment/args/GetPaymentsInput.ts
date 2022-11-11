@@ -27,4 +27,7 @@ export class GetPaymentsInput {
 
   @Field(() => PAYMENT_STATUS, { nullable: true })
   status?: PAYMENT_STATUS;
+
+  @Field({ nullable: true })
+  floor?: number;
 }

@@ -16,24 +16,31 @@ export async function createAndPushNotification(
     Notification.create(notificationInput)
   )) as Notification;
 
-  const message = {
-    data: {
-      id: String(newNotification?.id ?? ""),
-      content: newNotification.content ?? "",
-      title: newNotification.title ?? "",
-      type: newNotification.type ?? "",
-      dataId: newNotification.dataId?.toString() ?? "",
-      userId: newNotification.userId?.toString() ?? "",
-      createdAt: newNotification?.createdAt?.toString() ?? "",
-    },
-    tokens: users
-      .filter((user) => !!user.firebaseToken)
-      .map((user) => user.firebaseToken) as string[],
-  };
+  const notificationUsers = users
+    .filter((user) => !!user.firebaseToken)
+    .map((user) => user.firebaseToken) as string[];
 
-  const repo = await getMessaging().sendMulticast(message);
+    console.log("notificationUsers", notificationUsers);
+    
+    
+  if (notificationUsers?.[0]) {
+    const message = {
+      data: {
+        id: String(newNotification?.id ?? ""),
+        content: newNotification.content ?? "",
+        title: newNotification.title ?? "",
+        type: newNotification.type ?? "",
+        dataId: newNotification.dataId?.toString() ?? "",
+        userId: newNotification.userId?.toString() ?? "",
+        createdAt: newNotification?.createdAt?.toString() ?? "",
+      },
+      tokens: users
+        .filter((user) => !!user.firebaseToken)
+        .map((user) => user.firebaseToken) as string[],
+    };
 
-  console.log(repo?.responses);
+    await getMessaging().sendMulticast(message);
+  }
 
   return newNotification;
 }

@@ -40,6 +40,7 @@ export enum INCIDENT_PRIORITY {
 export enum LOCATION_RESERVATION_STATUS {
   Draft = "Draft",
   Published = "Published",
+  Completed = "Completed",
 }
 
 export enum ORDER_BY {

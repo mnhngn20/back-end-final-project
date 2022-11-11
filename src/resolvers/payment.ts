@@ -12,6 +12,7 @@ import { User, Room, LocationReservation } from "../entities";
 import { OutOfBoundsError, PermissionDeniedError } from "../types/Errors";
 import { authMiddleware } from "../middlewares/auth-middleware";
 import { DISCOUNT_TYPE, PAYMENT_STATUS, ROOM_STATUS } from "../constants";
+import { In } from "typeorm";
 
 @Resolver()
 export class PaymentResolver {
@@ -48,6 +49,7 @@ export class PaymentResolver {
       roomId,
       status,
       userIds,
+      floor,
     }: GetPaymentsInput
   ): Promise<PaymentListResponse> {
     try {
@@ -58,6 +60,12 @@ export class PaymentResolver {
         .leftJoinAndSelect("payment.locationReservation", "locationReservation")
         .where(`"payment"."id" IS NOT NULL`)
         .orderBy("payment.createdAt", orderBy);
+
+      if (floor) {
+        builder.andWhere(`"room"."floor" = :floor`, {
+          floor,
+        });
+      }
 
       if (userIds) {
         builder.andWhere(`"user"."id" IN (:...userIds)`, {
@@ -132,6 +140,46 @@ export class PaymentResolver {
     }
   }
 
+  @Mutation(() => PaymentResponse)
+  @UseMiddleware(authMiddleware)
+  async manuallyPay(
+    @Arg("id")
+    id: number
+  ): Promise<PaymentResponse> {
+    try {
+      const existingPayment = await Payment.findOne({ where: { id } });
+
+      if (!existingPayment) {
+        throw new Error("Payment not found!");
+      }
+
+      const existingLocationReservation = await LocationReservation.findOne({
+        where: {
+          id: existingPayment.locationReservationId,
+        },
+      });
+
+      if (!existingLocationReservation) {
+        throw new Error("Location Reservation Not Found!");
+      }
+
+      existingLocationReservation.totalReceivedPrice =
+        (existingLocationReservation?.totalReceivedPrice ?? 0) +
+        (existingPayment.totalPrice ?? 0);
+
+      await existingLocationReservation.save();
+
+      existingPayment.status = PAYMENT_STATUS.Paid;
+
+      return {
+        message: "Successfully paid",
+        payment: await existingPayment.save(),
+      };
+    } catch (error) {
+      throw new Error(error);
+    }
+  }
+
   @Mutation((_returns) => PaymentResponse)
   @UseMiddleware(authMiddleware)
   async upsertPayment(
@@ -147,6 +195,7 @@ export class PaymentResolver {
       waterPrice,
       extraFee,
       prePaidFee,
+      userIds,
     }: UpsertPaymentInput
   ): Promise<PaymentResponse> {
     const existingLocation = await Location.findOne({
@@ -247,6 +296,16 @@ export class PaymentResolver {
           existingPayment.prePaidFee
         ) {
           existingPayment.status = PAYMENT_STATUS.Unpaid;
+        }
+
+        if (userIds) {
+          const existingUsers = await User.find({
+            where: {
+              id: In(userIds),
+            },
+          });
+
+          existingPayment.users = existingUsers;
         }
 
         existingPayment.totalPrice = calculatedPaymentPrice;

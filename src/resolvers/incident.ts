@@ -14,7 +14,7 @@ import { User, Room } from "../entities";
 import { OutOfBoundsError } from "../types/Errors";
 import { authMiddleware } from "../middlewares/auth-middleware";
 import { ILike, MoreThanOrEqual } from "typeorm";
-import { INCIDENT_STATUS, NOTIFICATION_TYPE } from "../constants";
+import { INCIDENT_STATUS, NOTIFICATION_TYPE, USER_ROLE } from "../constants";
 import { createAndPushNotification } from "../services/notification.service";
 
 @Resolver()
@@ -81,7 +81,7 @@ export class IncidentResolver {
       };
 
       const [result, total] = await Incident.findAndCount({
-        order: { createdAt: orderBy },
+        order: { updatedAt: orderBy },
         take: limit,
         where: options,
         skip: (page - 1) * limit,
@@ -126,8 +126,6 @@ export class IncidentResolver {
       }
       if (status) {
         if (status === INCIDENT_STATUS.Done) {
-          console.log(status);
-
           if (!existingIncident.employeeId)
             throw new Error("Incident cannot complete with employee");
           const completedDate = dayjs().toDate();
@@ -170,6 +168,7 @@ export class IncidentResolver {
       reporterId,
       roomId,
       status,
+      fromCustomer,
       ...rest
     }: UpsertIncidentInput
   ): Promise<IncidentResponse> {
@@ -256,19 +255,39 @@ export class IncidentResolver {
         };
       } else {
         // CREATE SECTION
-        const newIncident = await Incident.create({
-          ...rest,
-          locationId,
-          reporterId,
-          incidentCategoryId,
-        });
+        const newIncident = await Incident.save(
+          await Incident.create({
+            ...rest,
+            fromCustomer,
+            locationId,
+            reporterId,
+            incidentCategoryId,
+            roomId,
+          })
+        );
+
+        if (fromCustomer) {
+          const locationAdmins = await User.find({
+            where: { locationId: locationId, role: USER_ROLE.Admin },
+          });
+          const reporter = await User.findOne({ where: { id: reporterId } });
+          locationAdmins?.forEach((admin) => {
+            createAndPushNotification(
+              {
+                content: `${reporter?.name} created a new incident!`,
+                title: `New Incident`,
+                type: NOTIFICATION_TYPE.Incident,
+                isAdminOnly: true,
+                userId: admin?.id,
+                dataId: newIncident?.id,
+              },
+              [admin]
+            );
+          });
+        }
 
         if (employeeId) {
           newIncident.employeeId = employeeId;
-        }
-
-        if (roomId) {
-          newIncident.roomId = roomId;
         }
 
         return {

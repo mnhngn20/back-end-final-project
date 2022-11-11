@@ -1,3 +1,4 @@
+import { updateLocationReservationTotalCalculatedPrice } from "./../utils/common/locationReservation";
 import { Payment } from "./../entities/Payment";
 import { Room } from "./../entities/Room";
 import { User } from "./../entities/User";
@@ -9,12 +10,18 @@ import {
   LocationReservationListResponse,
   LocationReservationResponse,
   UpsertLocationReservationInput,
+  ChangeLocationReservationStatusInput,
 } from "../types/locationReservation";
 import { OutOfBoundsError, PermissionDeniedError } from "../types/Errors";
 import { authMiddleware } from "../middlewares/auth-middleware";
 import { Between, LessThanOrEqual, MoreThanOrEqual } from "typeorm";
 import dayjs from "dayjs";
-import { PAYMENT_STATUS, ROOM_STATUS } from "../constants";
+import {
+  LOCATION_RESERVATION_STATUS,
+  PAYMENT_STATUS,
+  ROOM_STATUS,
+} from "../constants";
+import { createAndPushNotification } from "../services/notification.service";
 
 @Resolver()
 export class LocationReservationResolver {
@@ -32,12 +39,17 @@ export class LocationReservationResolver {
         throw new Error("Location reservation not found");
 
       //Update Location Reservation total calculated price
-      let totalCalculatedPrice = 0;
-      existingLocationReservation.payments.forEach((payment) => {
-        totalCalculatedPrice +=
-          (payment.totalPrice ?? 0) + (payment.prePaidFee ?? 0);
-      });
-      existingLocationReservation.totalCalculatedPrice = totalCalculatedPrice;
+      updateLocationReservationTotalCalculatedPrice(
+        existingLocationReservation
+      );
+      if (
+        existingLocationReservation?.totalCalculatedPrice ===
+        existingLocationReservation?.totalReceivedPrice
+      ) {
+        existingLocationReservation.status =
+          LOCATION_RESERVATION_STATUS.Completed;
+        await existingLocationReservation.save();
+      }
 
       return {
         message: "Get location reservation successfully!",
@@ -72,12 +84,25 @@ export class LocationReservationResolver {
       };
 
       const [result, total] = await LocationReservation.findAndCount({
-        order: { createdAt: orderBy },
+        order: { updatedAt: orderBy },
         take: limit,
         where: options,
         skip: (page - 1) * limit,
         relations: ["location", "createdBy"],
       });
+
+      await Promise.all(
+        result?.map(async (locationReservation) => {
+          updateLocationReservationTotalCalculatedPrice(locationReservation);
+          if (
+            locationReservation?.totalCalculatedPrice ===
+            locationReservation?.totalReceivedPrice
+          ) {
+            locationReservation.status = LOCATION_RESERVATION_STATUS.Completed;
+            await locationReservation.save();
+          }
+        })
+      );
 
       const totalPages = Math.ceil(total / limit);
       if (totalPages > 0 && page > totalPages)
@@ -90,6 +115,113 @@ export class LocationReservationResolver {
         total,
         totalPages,
       };
+    } catch (error) {
+      throw new Error(error);
+    }
+  }
+
+  @Mutation(() => LocationReservationResponse)
+  @UseMiddleware(authMiddleware)
+  async changeLocationReservationStatus(
+    @Arg("input")
+    { locationReservationId, status }: ChangeLocationReservationStatusInput
+  ): Promise<LocationReservationResponse> {
+    try {
+      const existingLocationReservation = await LocationReservation.findOne({
+        where: {
+          id: locationReservationId,
+        },
+      });
+      if (!existingLocationReservation) {
+        throw new Error("Location Reservation not found!");
+      }
+
+      const payments = await Payment.find({
+        where: { locationReservationId },
+        relations: ["users"],
+      });
+
+      if (status === LOCATION_RESERVATION_STATUS.Published) {
+        payments.forEach(async (payment) => {
+          try {
+            if (payment.status === PAYMENT_STATUS.MissingLivingPrice) {
+              payment.status = PAYMENT_STATUS.Unpaid;
+            }
+            await payment.save();
+            console.log(payment?.users);
+
+            payment?.users.forEach((user) => {
+              createAndPushNotification(
+                {
+                  content: `You have new payment for ${dayjs(
+                    existingLocationReservation?.startDate
+                  ).format(
+                    "MMMM"
+                  )}. Please consider to check this payment as soon as possible. Thank you!`,
+                  locationId: existingLocationReservation.locationId,
+                  dataId: payment?.id,
+                  title: "New Payment",
+                  userId: user?.id,
+                },
+                [user]
+              );
+            });
+          } catch (error) {
+            throw new Error(error);
+          }
+        });
+      } else if (
+        existingLocationReservation?.status ===
+        LOCATION_RESERVATION_STATUS.Published
+      ) {
+        payments.forEach(async (payment) => {
+          try {
+            if (payment.status === PAYMENT_STATUS.Paid) {
+              payment.status = PAYMENT_STATUS.Unpaid;
+              existingLocationReservation.totalReceivedPrice = 0;
+            }
+            await payment.save();
+          } catch (error) {
+            throw new Error(error);
+          }
+        });
+      }
+
+      existingLocationReservation.status = status;
+
+      return {
+        message: "Change Location Reservation Status successfully!",
+        locationReservation: await existingLocationReservation.save(),
+      };
+    } catch (error) {
+      throw new Error(error);
+    }
+  }
+
+  @Mutation(() => String)
+  @UseMiddleware(authMiddleware)
+  async deleteLocationReservation(@Arg("id") id: number): Promise<string> {
+    try {
+      const existingLocationReservation = await LocationReservation.findOne({
+        where: {
+          id,
+        },
+      });
+      if (!existingLocationReservation) {
+        throw new Error("Location Reservation not found!");
+      }
+
+      const locationReservationPayments = await Payment.find({
+        where: {
+          locationReservationId: existingLocationReservation.id,
+        },
+      });
+
+      await Payment.remove(locationReservationPayments);
+
+      await LocationReservation.delete(existingLocationReservation?.id);
+
+      return "Deleted location reservation";
     } catch (error) {
       throw new Error(error);
     }
@@ -182,6 +314,7 @@ export class LocationReservationResolver {
           const existingLocationReservationInSameMonth =
             await LocationReservation.findOne({
               where: {
+                locationId,
                 startDate: Between(compareStartDate, compareEndDate),
               },
             });
@@ -200,47 +333,50 @@ export class LocationReservationResolver {
           throw new Error("Location Not Found");
         }
 
-        const newLocationReservation = await LocationReservation.create({
-          createdById,
-          locationId,
-          startDate,
-          status,
-          totalReceivedPrice: 0,
-          totalCalculatedPrice: 0,
-        });
+        const newLocationReservation = await LocationReservation.save(
+          await LocationReservation.create({
+            createdById,
+            locationId,
+            startDate,
+            status,
+            totalReceivedPrice: 0,
+            totalCalculatedPrice: 0,
+          })
+        );
 
-        await newLocationReservation.save();
+        console.log("id", newLocationReservation?.id);
 
         const currentLocationRooms = await Room.find({
           where: {
             locationId,
+            status: ROOM_STATUS.Owned,
           },
           relations: ["users"],
         });
 
-        currentLocationRooms.forEach(async (room) => {
-          if (room?.status === ROOM_STATUS.Owned) {
-            const newPaymentRecord = await Payment.create({
-              locationId,
-              locationReservationId: newLocationReservation?.id,
-              roomId: room?.id,
-              users: room?.users,
-              status: PAYMENT_STATUS.MissingLivingPrice,
-              electricCounter: 0,
-              totalPrice: room?.basePrice,
-              waterPrice: 0,
-              extraFee: 0,
-              prePaidFee: 0,
-            });
-
-            await newPaymentRecord.save();
+        await Promise.all(
+          currentLocationRooms?.map(async (room) => {
+            await Payment.save(
+              await Payment.create({
+                locationId,
+                locationReservationId: newLocationReservation?.id,
+                roomId: room?.id,
+                users: room?.users,
+                status: PAYMENT_STATUS.MissingLivingPrice,
+                electricCounter: 0,
+                totalPrice: room?.basePrice,
+                waterPrice: 0,
+                extraFee: 0,
+                prePaidFee: 0,
+              })
+            );
 
             newLocationReservation.totalCalculatedPrice =
               (newLocationReservation.totalCalculatedPrice ?? 0) +
               room?.basePrice;
             await newLocationReservation.save();
-          }
-        });
+          })
+        );
 
         return {
           message: "Create location reservation successfully",

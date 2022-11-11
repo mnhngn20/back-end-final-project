@@ -33,6 +33,9 @@ export class UpsertPaymentInput {
   @Field()
   locationReservationId: number;
 
+  @Field(() => [Number], { nullable: true })
+  userIds?: number[];
+
   @Field()
   locationId: number;
 }
