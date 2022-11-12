@@ -236,19 +236,22 @@ export class LocationResolver {
           if (!upsertLocationInput?.address)
             throw new Error("Must include address when create Location!");
 
-          const newLocation = await Location.create({
-            ...upsertLocationInput,
-          });
+          const newLocation = await Location.save(
+            await Location.create({
+              ...upsertLocationInput,
+            })
+          );
 
           newLocation.locationServices = locationServices;
 
           if (contactInformations) {
             contactInformations.forEach(async (contactInformation) => {
-              const newContactInformation = await ContactInformation.create({
-                ...contactInformation,
-                locationId: newLocation.id,
-              });
-              await newContactInformation.save();
+              await ContactInformation.save(
+                await ContactInformation.create({
+                  ...contactInformation,
+                  locationId: newLocation.id,
+                })
+              );
             });
           }
           if (newLocation?.lat && newLocation?.long)

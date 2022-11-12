@@ -47,7 +47,7 @@ dayjs.extend(utc);
 
 export const dataSource = new DataSource({
   type: "postgres",
-  database: "final-project",
+  name: process.env.DB_NAME_DEV,
   username: process.env.DB_USERNAME_DEV,
   password: process.env.DB_PASSWORD_DEV,
   // ssl: true,
@@ -79,6 +79,7 @@ const main = async () => {
     process.env.CORS_ORIGIN_API_PROD,
     process.env.CORS_ORIGIN_API_DEV,
     "http://localhost:3001",
+    "http://localhost:4000",
     "http://localhost:3002",
     "https://www.supercode.co.za",
   ];
