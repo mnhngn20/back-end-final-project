@@ -1,8 +1,10 @@
-import { LocationReservation, Location } from "./../entities";
+import dayjs from "dayjs";
+import { LocationReservation, Location, User } from "./../entities";
 import { Payment } from "../entities";
 import { CreateCheckoutSessionInput } from "../types/stripe";
 import Stripe from "stripe";
-import { PAYMENT_STATUS } from "../constants";
+import { NOTIFICATION_TYPE, PAYMENT_STATUS, USER_ROLE } from "../constants";
+import { createAndPushNotification } from "./notification.service";
 
 export class StripeService {
   readonly stripe: Stripe;
@@ -70,13 +72,15 @@ export class StripeService {
 
 export async function handlePayment(paymentId: string) {
   try {
+    console.log("aaaaa");
+
     const stripeService = new StripeService();
 
     const existingPayment = await Payment.findOne({
       where: {
         id: Number(paymentId),
       },
-      relations: ["location"],
+      relations: ["location", "room", "locationReservation"],
     });
 
     if (!existingPayment) {
@@ -125,6 +129,32 @@ export async function handlePayment(paymentId: string) {
       (existingLocation.totalRevenue ?? 0) + (existingPayment.totalPrice ?? 0);
 
     await existingLocation.save();
+
+    const admins = await User.find({
+      where: {
+        locationId: existingLocation?.id,
+        role: USER_ROLE.Admin,
+      },
+    });
+
+    await Promise.all(
+      admins?.map(async (admin) => {
+        createAndPushNotification(
+          {
+            content: `Payment for ${existingPayment.room.name} for ${dayjs(
+              existingPayment.locationReservation.startDate,
+              "MMMM YYYY"
+            )} is settled by customer! Please review your location reservation board!`,
+            locationId: existingLocationReservation.locationId,
+            dataId: existingPayment?.id,
+            title: "New Payment",
+            userId: admin?.id,
+            type: NOTIFICATION_TYPE.Payment,
+          },
+          [admin]
+        );
+      })
+    );
   } catch (error) {
     throw new Error(error);
   }

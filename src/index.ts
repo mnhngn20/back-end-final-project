@@ -153,6 +153,7 @@ const main = async () => {
     (request, response) => {
       const payload = request.body;
       const sig = request.headers["stripe-signature"];
+      console.log("aaaa1a");
 
       if (!sig) {
         return response.status(400).send(`Invalid signature`);
