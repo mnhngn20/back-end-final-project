@@ -41,15 +41,15 @@ export class Room extends BaseEntity {
 
   @Field({ nullable: true })
   @Column({ nullable: true })
-  description?: String;
+  description?: string;
 
   @Field({ nullable: true })
   @Column({ nullable: true })
-  images?: String;
+  images?: string;
 
   @Field({ nullable: true })
   @Column({ nullable: true })
-  thumbnail?: String;
+  thumbnail?: string;
 
   @Field((_type) => ROOM_STATUS)
   @Column({

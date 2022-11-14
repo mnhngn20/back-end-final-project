@@ -1,13 +1,12 @@
 import { Field, Float, InputType } from "type-graphql";
-import { ORDER_BY } from "../../../constants";
 
 @InputType()
 export class GetLocationsInput {
   @Field()
   limit: number = 10;
 
-  @Field((_type) => ORDER_BY)
-  orderBy: ORDER_BY = ORDER_BY.ASC;
+  @Field({ nullable: true })
+  orderBy?: String;
 
   @Field()
   page: number = 1;
@@ -32,4 +31,10 @@ export class GetLocationsInput {
 
   @Field(() => Float, { nullable: true })
   distance?: number;
+
+  @Field({ nullable: true })
+  minPrice?: number;
+
+  @Field({ nullable: true })
+  maxPrice?: number;
 }

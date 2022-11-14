@@ -82,6 +82,10 @@ export class Location extends BaseEntity {
 
   @Field({ nullable: true })
   @Column({ nullable: true })
+  totalRevenue?: number = 0;
+
+  @Field({ nullable: true })
+  @Column({ nullable: true })
   minPrice?: number = 1000000;
 
   @Field()

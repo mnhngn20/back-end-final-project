@@ -11,4 +11,6 @@ export const updateLocationReservationTotalCalculatedPrice = async (
   existingLocationReservation.totalCalculatedPrice = totalCalculatedPrice;
 
   await existingLocationReservation.save();
+
+  return totalCalculatedPrice;
 };

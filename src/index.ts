@@ -42,8 +42,15 @@ import {
   Notification,
 } from "./entities";
 import dayjs from "dayjs";
+import Stripe from "stripe";
+import bodyParser from "body-parser";
+import { handlePayment } from "./services/stripe.service";
 
 dayjs.extend(utc);
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
+  apiVersion: "2022-08-01",
+});
 
 export const dataSource = new DataSource({
   type: "postgres",
@@ -138,6 +145,43 @@ const main = async () => {
     path: "/graphql",
     cors: corsOptions,
   });
+
+  // SECTION: INIT STRIPE WEBHOOK
+  app.post(
+    "/webhook",
+    bodyParser.raw({ type: "application/json" }),
+    (request, response) => {
+      const payload = request.body;
+      const sig = request.headers["stripe-signature"];
+
+      if (!sig) {
+        return response.status(400).send(`Invalid signature`);
+      }
+
+      let event;
+
+      try {
+        event = stripe.webhooks.constructEvent(
+          payload,
+          sig,
+          process.env.WEBHOOK_SECRET_KEY as string
+        );
+
+        const checkoutSession = event.data.object as Stripe.Checkout.Session;
+
+        if (event.type === "checkout.session.completed") {
+          if (checkoutSession.metadata?.paymentId) {
+            handlePayment(checkoutSession.metadata?.paymentId);
+          }
+        }
+        ``;
+      } catch (error) {
+        return response.status(400).send(`Webhook error ${error.message}`);
+      }
+
+      return response.status(200);
+    }
+  );
 
   // SECTION: INIT SERVICES
   console.log(">>> Initializing Firebase FCM...");

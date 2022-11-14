@@ -23,7 +23,7 @@ export class LocationReservation extends BaseEntity {
 
   @Field()
   @Column()
-  totalCalculatedPrice?: number;
+  totalCalculatedPrice?: number = 0;
 
   @Field()
   @Column({

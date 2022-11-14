@@ -18,6 +18,7 @@ import { Between, LessThanOrEqual, MoreThanOrEqual } from "typeorm";
 import dayjs from "dayjs";
 import {
   LOCATION_RESERVATION_STATUS,
+  NOTIFICATION_TYPE,
   PAYMENT_STATUS,
   ROOM_STATUS,
 } from "../constants";
@@ -39,12 +40,15 @@ export class LocationReservationResolver {
         throw new Error("Location reservation not found");
 
       //Update Location Reservation total calculated price
-      updateLocationReservationTotalCalculatedPrice(
-        existingLocationReservation
-      );
+      const totalCalulatedPrice =
+        await updateLocationReservationTotalCalculatedPrice(
+          existingLocationReservation
+        );
       if (
-        existingLocationReservation?.totalCalculatedPrice ===
-        existingLocationReservation?.totalReceivedPrice
+        totalCalulatedPrice ===
+          existingLocationReservation?.totalReceivedPrice &&
+        existingLocationReservation.status ===
+          LOCATION_RESERVATION_STATUS.Published
       ) {
         existingLocationReservation.status =
           LOCATION_RESERVATION_STATUS.Completed;
@@ -93,10 +97,13 @@ export class LocationReservationResolver {
 
       await Promise.all(
         result?.map(async (locationReservation) => {
-          updateLocationReservationTotalCalculatedPrice(locationReservation);
+          const totalCalulatedPrice =
+            await updateLocationReservationTotalCalculatedPrice(
+              locationReservation
+            );
           if (
-            locationReservation?.totalCalculatedPrice ===
-            locationReservation?.totalReceivedPrice
+            totalCalulatedPrice === locationReservation?.totalReceivedPrice &&
+            locationReservation.status === LOCATION_RESERVATION_STATUS.Published
           ) {
             locationReservation.status = LOCATION_RESERVATION_STATUS.Completed;
             await locationReservation.save();
@@ -162,6 +169,7 @@ export class LocationReservationResolver {
                   dataId: payment?.id,
                   title: "New Payment",
                   userId: user?.id,
+                  type: NOTIFICATION_TYPE.Payment,
                 },
                 [user]
               );

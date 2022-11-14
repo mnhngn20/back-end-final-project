@@ -2,8 +2,9 @@ import { authMiddleware } from "../middlewares/auth-middleware";
 import { Context } from "../types/Context";
 import { Arg, Ctx, Mutation, Resolver, UseMiddleware } from "type-graphql";
 import { StripeService } from "../services/stripe.service";
-import { Location, User } from "../entities";
+import { Location, Payment, User } from "../entities";
 import { PermissionDeniedError } from "../types/Errors";
+import { CreateStripeCheckoutInput, StripeResponse } from "../types/stripe";
 
 @Resolver()
 export class StripeResolver {
@@ -38,5 +39,43 @@ export class StripeResolver {
     } catch (error) {
       throw new Error(error);
     }
+  }
+
+  @Mutation(() => StripeResponse)
+  @UseMiddleware(authMiddleware)
+  async createStripeCheckoutSession(
+    @Arg("input")
+    { paymentId, cancelUrl, successUrl }: CreateStripeCheckoutInput
+  ): Promise<StripeResponse> {
+    const stripeService = new StripeService();
+    const existingPayment = await Payment.findOne({
+      where: {
+        id: paymentId,
+      },
+      relations: ["room", "location"],
+    });
+
+    if (!existingPayment) {
+      throw new Error("Payment not found");
+    }
+
+    const session = await stripeService.createCheckoutSession({
+      cancelUrl,
+      paymentId,
+      successUrl,
+      description: `Payment for Room ${existingPayment.room.name}`,
+      title: `Location: ${existingPayment.location.name}`,
+      price: existingPayment.totalPrice,
+      image: existingPayment.room.thumbnail,
+    });
+
+    if (!session.url) {
+      throw new Error("Internal server error");
+    }
+
+    return {
+      message: "Created checkout session successfully!",
+      url: session.url,
+    };
   }
 }

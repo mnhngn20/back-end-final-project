@@ -17,7 +17,7 @@ import {
 } from "../types/location";
 import { Location } from "../entities/Location";
 import { Context } from "../types/Context";
-import { USER_ROLE } from "../constants";
+import { ORDER_BY, USER_ROLE } from "../constants";
 import { OutOfBoundsError, PermissionDeniedError } from "../types/Errors";
 import { ContactInformation } from "../entities/ContactInformation";
 import { convertCoordToGeo } from "../utils/geoLocation";
@@ -55,6 +55,8 @@ export class LocationResolver {
       lat,
       distance,
       long,
+      minPrice,
+      maxPrice,
     }: GetLocationsInput
   ): Promise<LocationListResponse> {
     try {
@@ -65,8 +67,14 @@ export class LocationResolver {
         )
         .leftJoinAndSelect("location.locationServices", "locationService")
         .leftJoinAndSelect("location.amenities", "amenity")
-        .where(`"location"."id" IS NOT NULL`)
-        .orderBy("location.createdAt", orderBy);
+        .where(`"location"."id" IS NOT NULL`);
+
+      if (orderBy) {
+        const [field, order] = orderBy.split(":");
+        builder.orderBy(field, order as ORDER_BY);
+      } else {
+        builder.orderBy("location.createdAt", ORDER_BY.DESC);
+      }
 
       if (lat && long) {
         builder.andWhere(
@@ -77,6 +85,18 @@ export class LocationResolver {
             distance: distance ?? 20000, //meter
           }
         );
+      }
+
+      if (minPrice) {
+        builder.andWhere(`"location"."minPrice" >= :minPrice`, {
+          minPrice,
+        });
+      }
+
+      if (maxPrice) {
+        builder.andWhere(`"location"."minPrice" <= :maxPrice`, {
+          maxPrice,
+        });
       }
 
       if (locationServiceIds) {

@@ -171,6 +171,21 @@ export class PaymentResolver {
 
       existingPayment.status = PAYMENT_STATUS.Paid;
 
+      const existingLocation = await Location.findOne({
+        where: {
+          id: existingLocationReservation.locationId,
+        },
+      });
+      if (!existingLocation) {
+        throw new Error("Location not found");
+      }
+
+      existingLocation.totalRevenue =
+        (existingLocation.totalRevenue ?? 0) +
+        (existingPayment.totalPrice ?? 0);
+
+      await existingLocation.save();
+
       return {
         message: "Successfully paid",
         payment: await existingPayment.save(),
