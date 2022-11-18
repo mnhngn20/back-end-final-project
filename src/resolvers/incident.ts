@@ -33,11 +33,26 @@ export class IncidentResolver {
         ],
       });
 
+      if (
+        existingIncident?.status !== INCIDENT_STATUS.Done &&
+        existingIncident?.dueDate &&
+        dayjs(existingIncident?.dueDate).diff(dayjs()) < 0
+      ) {
+        existingIncident.status = INCIDENT_STATUS.Overdue;
+      }
+      if (
+        existingIncident?.status === INCIDENT_STATUS.Overdue &&
+        existingIncident?.dueDate &&
+        dayjs(existingIncident?.dueDate).diff(dayjs()) > 0
+      ) {
+        existingIncident.status = INCIDENT_STATUS.ToDo;
+      }
+
       if (!existingIncident) throw new Error("Incident Not Found");
 
       return {
         message: "Get Incident successfully",
-        incident: existingIncident,
+        incident: await existingIncident.save(),
       };
     } catch (error) {
       throw new Error(error);
@@ -93,6 +108,15 @@ export class IncidentResolver {
           "room",
         ],
       });
+
+      await Promise.all(
+        result.map(async (incident) => {
+          if (incident?.dueDate && dayjs(incident?.dueDate).diff(dayjs()) < 0) {
+            incident.status = INCIDENT_STATUS.Overdue;
+            await incident.save();
+          }
+        })
+      );
 
       const totalPages = Math.ceil(total / limit);
       if (totalPages > 0 && page > totalPages)

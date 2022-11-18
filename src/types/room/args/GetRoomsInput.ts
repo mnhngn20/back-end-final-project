@@ -22,6 +22,9 @@ export class GetRoomsInput {
   floor?: number;
 
   @Field({ nullable: true })
+  capacity?: number;
+
+  @Field({ nullable: true })
   minBasePrice?: number;
 
   @Field({ nullable: true })

@@ -65,6 +65,7 @@ export class RoomResolver {
       minBasePrice,
       maxBasePrice,
       floor,
+      capacity,
     }: GetRoomsInput
   ): Promise<RoomListResponse> {
     try {
@@ -79,6 +80,7 @@ export class RoomResolver {
             basePrice: LessThanOrEqual(maxBasePrice),
           }),
         ...(floor && { floor }),
+        ...(capacity && { capacity }),
         ...(locationId && { locationId }),
         ...(name && {
           name: ILike(`%${name}%`),

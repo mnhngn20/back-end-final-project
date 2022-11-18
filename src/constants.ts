@@ -21,6 +21,7 @@ export enum INCIDENT_STATUS {
   InProgress = "In Progress",
   Cancel = "Cancel",
   Done = "Done",
+  Overdue = "Overdue",
 }
 
 export enum NOTIFICATION_TYPE {

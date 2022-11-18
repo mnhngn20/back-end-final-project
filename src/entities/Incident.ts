@@ -32,7 +32,7 @@ export class Incident extends BaseEntity {
 
   @Field({ nullable: true })
   @Column({ nullable: true })
-  fromCustomer?: boolean = true;
+  fromCustomer?: boolean;
 
   @Field({ nullable: true })
   @Column({ nullable: true })

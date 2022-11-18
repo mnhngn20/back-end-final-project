@@ -92,7 +92,7 @@ export class LocationReservationResolver {
         take: limit,
         where: options,
         skip: (page - 1) * limit,
-        relations: ["location", "createdBy"],
+        relations: ["location", "createdBy", "payments"],
       });
 
       await Promise.all(

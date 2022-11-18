@@ -1,6 +1,13 @@
 import { Payment } from "./../entities/Payment";
 import { Location } from "./../entities/Location";
-import { Arg, Mutation, Query, Resolver, UseMiddleware } from "type-graphql";
+import {
+  Arg,
+  Ctx,
+  Mutation,
+  Query,
+  Resolver,
+  UseMiddleware,
+} from "type-graphql";
 import {
   GetPaymentsInput,
   PaymentListResponse,
@@ -11,8 +18,15 @@ import {
 import { User, Room, LocationReservation } from "../entities";
 import { OutOfBoundsError, PermissionDeniedError } from "../types/Errors";
 import { authMiddleware } from "../middlewares/auth-middleware";
-import { DISCOUNT_TYPE, PAYMENT_STATUS, ROOM_STATUS } from "../constants";
+import {
+  DISCOUNT_TYPE,
+  LOCATION_RESERVATION_STATUS,
+  PAYMENT_STATUS,
+  ROOM_STATUS,
+  USER_ROLE,
+} from "../constants";
 import { In } from "typeorm";
+import { Context } from "../types/Context";
 
 @Resolver()
 export class PaymentResolver {
@@ -50,7 +64,8 @@ export class PaymentResolver {
       status,
       userIds,
       floor,
-    }: GetPaymentsInput
+    }: GetPaymentsInput,
+    @Ctx() { user: currentUser }: Context
   ): Promise<PaymentListResponse> {
     try {
       const builder = Payment.createQueryBuilder("payment")
@@ -59,7 +74,7 @@ export class PaymentResolver {
         .leftJoinAndSelect("payment.location", "location")
         .leftJoinAndSelect("payment.locationReservation", "locationReservation")
         .where(`"payment"."id" IS NOT NULL`)
-        .orderBy("payment.createdAt", orderBy);
+        .orderBy("payment.updatedAt", orderBy);
 
       if (floor) {
         builder.andWhere(`"room"."floor" = :floor`, {
@@ -93,6 +108,12 @@ export class PaymentResolver {
       if (status) {
         builder.andWhere(`"payment"."status" = :status`, {
           status,
+        });
+      }
+
+      if (currentUser?.role === USER_ROLE.Customer) {
+        builder.andWhere(`"locationReservation"."status" = :status`, {
+          status: LOCATION_RESERVATION_STATUS.Published,
         });
       }
 

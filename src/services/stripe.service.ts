@@ -142,8 +142,9 @@ export async function handlePayment(paymentId: string) {
         createAndPushNotification(
           {
             content: `Payment for ${existingPayment.room.name} for ${dayjs(
-              existingPayment.locationReservation.startDate,
-              "MMMM YYYY"
+              existingPayment.locationReservation.startDate
+            ).format(
+              "MMMM-YYYY"
             )} is settled by customer! Please review your location reservation board!`,
             locationId: existingLocationReservation.locationId,
             dataId: existingPayment?.id,
