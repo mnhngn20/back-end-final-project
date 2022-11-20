@@ -98,7 +98,10 @@ export class User extends BaseEntity {
   locationId?: number;
 
   @Field((_type) => Room, { nullable: true })
-  @ManyToOne(() => Room, (room) => room.users)
+  @ManyToOne(() => Room, (room) => room.users, {
+    cascade: true,
+    onDelete: "SET NULL",
+  })
   room?: Room;
 
   @Field((_type) => [Incident], { nullable: true })

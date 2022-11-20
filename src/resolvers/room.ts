@@ -1,3 +1,5 @@
+import { Incident } from "./../entities/Incident";
+import { Equipment } from "./../entities/Equipment";
 import {
   Arg,
   Ctx,
@@ -23,7 +25,7 @@ import {
 } from "../types/room";
 import { LessThanOrEqual, ILike, MoreThanOrEqual } from "typeorm";
 import { ROOM_STATUS, USER_ROLE } from "../constants";
-import { Location } from "../entities";
+import { Location, Payment } from "../entities";
 
 @Resolver()
 export class RoomResolver {
@@ -195,6 +197,48 @@ export class RoomResolver {
           room: await newRoom.save(),
         };
       }
+    } catch (error) {
+      throw new Error(error);
+    }
+  }
+
+  @Mutation(() => String)
+  @UseMiddleware(authMiddleware)
+  async deleteRoom(@Arg("id") id: number): Promise<string> {
+    try {
+      const existingRoom = await Room.findOne({ where: { id } });
+
+      if (!existingRoom) {
+        throw new Error("Room not found!");
+      }
+
+      const roomEquipments = await Equipment.find({
+        where: {
+          roomId: existingRoom.id,
+        },
+      });
+
+      await Equipment.remove(roomEquipments);
+
+      const roomPayments = await Payment.find({
+        where: {
+          roomId: existingRoom.id,
+        },
+      });
+
+      await Payment.remove(roomPayments);
+
+      const roomIncidents = await Incident.find({
+        where: {
+          roomId: existingRoom.id,
+        },
+      });
+
+      await Incident.remove(roomIncidents);
+
+      await Room.delete(existingRoom.id);
+
+      return "Delete room successfully!";
     } catch (error) {
       throw new Error(error);
     }

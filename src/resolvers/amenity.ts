@@ -147,4 +147,25 @@ export class AmenityResolver {
       throw new Error(error);
     }
   }
+  @Mutation(() => String)
+  @UseMiddleware(authMiddleware)
+  async deleteAmenity(@Arg("id") id: number): Promise<string> {
+    try {
+      const existingAmenity = await Amenity.findOne({
+        where: {
+          id,
+        },
+      });
+
+      if (!existingAmenity) {
+        throw new Error("Amenity not found!");
+      }
+
+      await Amenity.delete(existingAmenity.id);
+
+      return "Deleted amenity successfully";
+    } catch (error) {
+      throw new Error(error);
+    }
+  }
 }

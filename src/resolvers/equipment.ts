@@ -187,4 +187,26 @@ export class EquipmentResolver {
       throw new Error(error);
     }
   }
+
+  @Mutation(() => String)
+  @UseMiddleware(authMiddleware)
+  async deleteEquipment(@Arg("id") id: number): Promise<string> {
+    try {
+      const existingEquipment = await Equipment.findOne({
+        where: {
+          id,
+        },
+      });
+
+      if (!existingEquipment) {
+        throw new Error("Equipment not found!");
+      }
+
+      await Equipment.delete(existingEquipment.id);
+
+      return "Deleted equipment successfully";
+    } catch (error) {
+      throw new Error(error);
+    }
+  }
 }
