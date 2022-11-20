@@ -42,12 +42,15 @@ export class AmenityTypeResolver {
   @Query((_returns) => AmenityTypeListResponse)
   async getAmenityTypes(
     @Arg("input")
-    { limit, orderBy, page, name }: GetAmenityTypesInput
+    { limit, orderBy, page, name, isActive }: GetAmenityTypesInput
   ): Promise<AmenityTypeListResponse> {
     try {
       const options = {
         ...(name && {
           name: ILike(`%${name}%`),
+        }),
+        ...(isActive !== undefined && {
+          isActive,
         }),
       };
 

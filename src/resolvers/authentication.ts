@@ -19,6 +19,7 @@ import { JwtPayload } from "jsonwebtoken";
 import { AuthenticationError } from "apollo-server-core";
 import { sendEmail } from "../utils/user/mailer";
 import { Context } from "../types/Context";
+import { USER_ROLE } from "../constants";
 
 @Resolver()
 export class AuthResolver {
@@ -60,10 +61,22 @@ export class AuthResolver {
     @Ctx() { req }: Context
   ): Promise<LoginResponse> {
     try {
-      const existingUser = await User.findOne({ where: { email } });
+      const existingUser = await User.findOne({
+        where: { email },
+        relations: ["location"],
+      });
 
       if (!existingUser) throw new Error("Email doesn't exist");
-      if (!existingUser.isActive) throw new Error("Current user is disabled.");
+      if (existingUser.role !== USER_ROLE.SuperAdmin) {
+        if (!existingUser.isActive)
+          throw new Error(
+            "Your account is currently disabled by the system. Please contact the admins to grant access to this page."
+          );
+        if (!existingUser.location?.isActive)
+          throw new Error(
+            "Your current location is no longer available in our system. Contact your admin to grant access to this page."
+          );
+      }
       const isPasswordValid = await argon2.verify(
         existingUser.password,
         password

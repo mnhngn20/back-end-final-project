@@ -13,5 +13,8 @@ export class GetAmenityTypesInput {
   orderBy: ORDER_BY = ORDER_BY.ASC;
 
   @Field({ nullable: true })
-  name?: String;
+  name?: string;
+
+  @Field({ nullable: true })
+  isActive?: boolean;
 }

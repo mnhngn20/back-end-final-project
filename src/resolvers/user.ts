@@ -46,6 +46,17 @@ export class UserResolver {
 
       if (!existingUser) throw new Error(UserNotFoundError);
 
+      if (existingUser.role !== USER_ROLE.SuperAdmin) {
+        if (!existingUser.isActive)
+          throw new Error(
+            "Your account is currently disabled by the system. Please contact the admins to grant access to this page."
+          );
+        if (!existingUser.location?.isActive)
+          throw new Error(
+            "Your current location is no longer available in our system. Contact your admin to grant access to this page."
+          );
+      }
+
       return {
         message: "Get profile successfully",
         user: existingUser,
