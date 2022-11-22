@@ -6,7 +6,7 @@ export class UpdateIncidentForEmployeeInput {
   @Field()
   id: number;
 
-  @Field(() => INCIDENT_STATUS)
+  @Field(() => INCIDENT_STATUS, { nullable: true })
   status?: INCIDENT_STATUS;
 
   @Field({ nullable: true })
