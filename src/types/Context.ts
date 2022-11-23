@@ -1,3 +1,4 @@
+import { PLAT_FORM } from "./../constants";
 import { Request, Response } from "express";
 import { Session, SessionData } from "express-session";
 import { JwtPayload } from "jsonwebtoken";
@@ -11,4 +12,5 @@ export type Context = {
   };
   res: Response;
   user?: UserPayload;
+  platform?: PLAT_FORM;
 };

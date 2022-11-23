@@ -5,13 +5,13 @@ export const sendEmail = async (to: string, subject: string, text: string) => {
     const transporter = createTransport({
       service: "gmail",
       auth: {
-        user: process.env.CSPACE_EMAIL,
-        pass: process.env.CSPACE_PASSWORD,
+        user: process.env.GOODPLACE_EMAIL,
+        pass: process.env.GOODPLACE_PASSWORD,
       },
     });
 
     await transporter.sendMail({
-      from: process.env.CSPACE_EMAIL,
+      from: process.env.GOODPLACE_EMAIL,
       to,
       subject,
       text,

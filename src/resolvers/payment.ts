@@ -112,9 +112,12 @@ export class PaymentResolver {
       }
 
       if (currentUser?.role === USER_ROLE.Customer) {
-        builder.andWhere(`"locationReservation"."status" = :status`, {
-          status: LOCATION_RESERVATION_STATUS.Published,
-        });
+        builder.andWhere(
+          `"locationReservation"."status" = :locationReservationStatus`,
+          {
+            locationReservationStatus: LOCATION_RESERVATION_STATUS.Published,
+          }
+        );
       }
 
       const [data, total] = await builder

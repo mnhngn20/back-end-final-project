@@ -19,7 +19,7 @@ import { JwtPayload } from "jsonwebtoken";
 import { AuthenticationError } from "apollo-server-core";
 import { sendEmail } from "../utils/user/mailer";
 import { Context } from "../types/Context";
-import { USER_ROLE } from "../constants";
+import { PLAT_FORM, USER_ROLE } from "../constants";
 
 @Resolver()
 export class AuthResolver {
@@ -125,8 +125,10 @@ export class AuthResolver {
   }
 
   @Mutation((_return) => ResetPasswordResponse)
+  @UseMiddleware(platformMiddleware)
   async resetPassword(
-    @Arg("email") email: string
+    @Arg("email") email: string,
+    @Ctx() { platform }: Context
   ): Promise<ResetPasswordResponse> {
     try {
       const existingUser = await User.findOne({ where: { email } });
@@ -134,11 +136,24 @@ export class AuthResolver {
 
       const resetPasswordToken = createResetPasswordToken(existingUser);
 
-      const resetPasswordURL = `${process.env.APPLICATION_URL}/reset-password?token=${resetPasswordToken}`;
+      const url = (() => {
+        switch (platform) {
+          case PLAT_FORM.Admin:
+            return process.env.APPLICATION_ADMIN_URL;
+          case PLAT_FORM.Customer:
+            return process.env.APPLICATION_CLIENT_URL;
+          case PLAT_FORM.SuperAdmin:
+            return process.env.APPLICATION_SUPERADMIN_URL;
+          default:
+            return process.env.APPLICATION_SUPERADMIN_URL;
+        }
+      })();
+
+      const resetPasswordURL = `${url}/reset-password?token=${resetPasswordToken}`;
 
       await sendEmail(
         email,
-        "No Reply: CSpace Reset Password Mail",
+        "No Reply: GoodPlace Reset Password Mail",
         `Hello ${email}, here is the link to reset your password: ${resetPasswordURL}, this link will expire in the next 15 minutes, thanks for using our service!`
       );
 

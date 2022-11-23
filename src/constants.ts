@@ -2,6 +2,11 @@ import { registerEnumType } from "type-graphql";
 
 export const COOKIE_NAME = "cb-cspace-cookie";
 export const __prod__ = process.env.NODE_ENV === "production";
+export enum PLAT_FORM {
+  SuperAdmin = "SuperAdmin",
+  Admin = "Admin",
+  Customer = "Customer",
+}
 
 export enum ROOM_STATUS {
   Owned = "Owned",

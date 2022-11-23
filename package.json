@@ -9,12 +9,13 @@
     "server": "nodemon dist/index.js",
     "server-ts": "nodemon --exec ts-node -r ./src/index.ts",
     "watch": "tsc -w",
+    "build": "rimraf ./dist && tsc",
+    "start:prod": "npm run build && node dist/index.js",
     "generate-doc": "npx spectaql config.yml"
   },
   "author": "mnhngn20 <mnhngn20@gmail.com>",
   "license": "MIT",
   "dependencies": {
-    "@typegoose/typegoose": "^8.0.1",
     "@types/cors": "^2.8.12",
     "@types/express": "^4.17.13",
     "@types/express-session": "^1.17.4",
@@ -44,6 +45,7 @@
     "nodemon": "^2.0.10",
     "pg": "^8.6.0",
     "reflect-metadata": "^0.1.13",
+    "rimraf": "^3.0.2",
     "stripe": "^10.16.0",
     "ts-node": "^10.0.0",
     "type-graphql": "^1.1.1",

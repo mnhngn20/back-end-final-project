@@ -1,3 +1,4 @@
+import { PLAT_FORM } from "./../constants";
 import { MiddlewareFn } from "type-graphql";
 import { Context } from "../types/Context";
 import { AuthenticationError } from "apollo-server-express";
@@ -15,6 +16,8 @@ export const platformMiddleware: MiddlewareFn<Context> = async (
         `Platform must be in ["SuperAdmin", "Admin", "Customer"]`
       );
     }
+
+    context.platform = platform as PLAT_FORM;
 
     return next();
   } catch (error) {
