@@ -54,9 +54,11 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
 
 export const dataSource = new DataSource({
   type: "postgres",
-  name: process.env.DB_NAME_DEV,
+  database: process.env.DB_NAME_DEV,
   username: process.env.DB_USERNAME_DEV,
   password: process.env.DB_PASSWORD_DEV,
+  host: "localhost",
+  port: 5432,
   // ssl: true,
   // url: process.env.DB_URL_PROD,
   // logging: true,
