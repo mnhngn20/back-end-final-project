@@ -290,8 +290,6 @@ export class UserResolver {
       )
         throw new Error(PermissionDeniedError);
 
-      User.merge(foundUser, { ...rest });
-
       if (roomId) {
         const room = await Room.findOne({ where: { id: roomId } });
         if (!room) throw new Error("Room not found");
@@ -299,6 +297,8 @@ export class UserResolver {
         room.status = ROOM_STATUS.Owned;
         await room.save();
       }
+
+      User.merge(foundUser, { ...rest, roomId });
 
       return {
         message: "Update User Successfully",
