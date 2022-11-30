@@ -193,6 +193,19 @@ export class LocationReservationResolver {
             throw new Error(error);
           }
         });
+        const existingLocation = await Location.findOne({
+          where: {
+            id: existingLocationReservation.locationId,
+          },
+        });
+
+        if (!existingLocation) {
+          throw new Error("Location Not Found");
+        }
+        existingLocation.totalRevenue =
+          (existingLocation.totalRevenue ?? 0) -
+          (existingLocationReservation.totalReceivedPrice ?? 0);
+        await existingLocation.save();
       }
 
       existingLocationReservation.status = status;
@@ -218,6 +231,20 @@ export class LocationReservationResolver {
       if (!existingLocationReservation) {
         throw new Error("Location Reservation not found!");
       }
+
+      const existingLocation = await Location.findOne({
+        where: {
+          id: existingLocationReservation.locationId,
+        },
+      });
+
+      if (!existingLocation) {
+        throw new Error("Location Not Found");
+      }
+      existingLocation.totalRevenue =
+        (existingLocation.totalRevenue ?? 0) -
+        (existingLocationReservation.totalReceivedPrice ?? 0);
+      await existingLocation.save();
 
       const locationReservationPayments = await Payment.find({
         where: {
