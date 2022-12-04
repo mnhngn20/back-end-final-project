@@ -29,6 +29,10 @@ export class IncidentCategory extends BaseEntity {
   @Column({ nullable: true })
   icon?: string;
 
+  @Field({ nullable: true })
+  @Column({ nullable: true })
+  isActive?: boolean = true;
+
   @Field((_type) => [Incident], { nullable: true })
   @OneToMany(() => Incident, (incident) => incident.incidentCategory)
   incidents?: Incident[];

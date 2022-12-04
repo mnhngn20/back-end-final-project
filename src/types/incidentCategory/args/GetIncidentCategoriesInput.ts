@@ -14,4 +14,7 @@ export class GetIncidentCategoriesInput {
 
   @Field({ nullable: true })
   name?: String;
+
+  @Field({ nullable: true })
+  isActive?: boolean;
 }

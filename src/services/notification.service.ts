@@ -20,9 +20,6 @@ export async function createAndPushNotification(
     .filter((user) => !!user.firebaseToken)
     .map((user) => user.firebaseToken) as string[];
 
-    console.log("notificationUsers", notificationUsers);
-    
-    
   if (notificationUsers?.[0]) {
     const message = {
       data: {

@@ -1,3 +1,4 @@
+import { Equipment } from "./Equipment";
 import { INCIDENT_PRIORITY } from "./../constants";
 import { INCIDENT_STATUS } from "../constants";
 import { Field, ID, ObjectType } from "type-graphql";
@@ -89,6 +90,16 @@ export class Incident extends BaseEntity {
   @Field(() => User)
   @ManyToOne(() => User, (reporter) => reporter.reportIncidents)
   reporter: User;
+
+  @Field({ nullable: true })
+  @Column({ nullable: true })
+  isEquipmentReport?: boolean;
+
+  @Field(() => Equipment, { nullable: true })
+  @ManyToOne(() => Equipment, (equipment) => equipment.incidents, {
+    nullable: true,
+  })
+  equipment: Equipment;
 
   @Field()
   @Column()

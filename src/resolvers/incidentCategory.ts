@@ -1,3 +1,4 @@
+import { createEquipmentReportIncidentCategory } from "./../utils/helper";
 import { IncidentCategory } from "./../entities/IncidentCategory";
 import {
   Arg,
@@ -27,6 +28,7 @@ export class IncidentCategoryResolver {
     id: number
   ): Promise<IncidentCategoryResponse> {
     try {
+      createEquipmentReportIncidentCategory();
       const existingIncidentCategory = await IncidentCategory.findOne({
         where: { id },
       });
@@ -45,12 +47,17 @@ export class IncidentCategoryResolver {
   @Query((_returns) => IncidentCategoryListResponse)
   async getIncidentCategories(
     @Arg("input")
-    { limit, orderBy, page, name }: GetIncidentCategoriesInput
+    { limit, orderBy, page, name, isActive }: GetIncidentCategoriesInput
   ): Promise<IncidentCategoryListResponse> {
     try {
+      createEquipmentReportIncidentCategory();
+
       const options = {
         ...(name && {
           name: ILike(`%${name}%`),
+        }),
+        ...(isActive !== undefined && {
+          isActive,
         }),
       };
 

@@ -106,11 +106,11 @@ export class User extends BaseEntity {
 
   @Field((_type) => [Incident], { nullable: true })
   @OneToMany(() => Incident, (incident) => incident.reporter)
-  reportIncidents?: Incident;
+  reportIncidents?: Incident[];
 
   @Field((_type) => [Incident], { nullable: true })
   @OneToMany(() => Incident, (incident) => incident.employee)
-  employeeIncidents?: Incident;
+  employeeIncidents?: Incident[];
 
   @Field({ nullable: true })
   @Column({ nullable: true })

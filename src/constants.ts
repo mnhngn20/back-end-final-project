@@ -34,6 +34,7 @@ export enum NOTIFICATION_TYPE {
   Announcement = "Announcement",
   Incident = "Incident",
   Other = "Other",
+  Reservation = "Reservation",
 }
 
 export enum INCIDENT_PRIORITY {

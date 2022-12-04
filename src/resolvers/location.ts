@@ -29,7 +29,12 @@ export class LocationResolver {
     try {
       const existingLocation = await Location.findOne({
         where: { id },
-        relations: ["contactInformations", "locationServices", "amenities"],
+        relations: [
+          "contactInformations",
+          "locationServices",
+          "amenities",
+          "users",
+        ],
       });
       if (!existingLocation) throw new Error("Location Not Found");
       return {

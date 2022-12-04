@@ -379,8 +379,6 @@ export class LocationReservationResolver {
           })
         );
 
-        console.log("id", newLocationReservation?.id);
-
         const currentLocationRooms = await Room.find({
           where: {
             locationId,
@@ -411,6 +409,20 @@ export class LocationReservationResolver {
               room?.basePrice;
             await newLocationReservation.save();
           })
+        );
+
+        createAndPushNotification(
+          {
+            content: `You have just been assigned to complete ${dayjs(
+              newLocationReservation.startDate
+            ).format("MMMM YYYY")} reservation!`,
+            locationId: newLocationReservation.locationId,
+            dataId: newLocationReservation.id,
+            title: "New Payment",
+            userId: existingCreatedByUser?.id,
+            type: NOTIFICATION_TYPE.Reservation,
+          },
+          [existingCreatedByUser]
         );
 
         return {

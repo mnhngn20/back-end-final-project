@@ -109,16 +109,6 @@ export class RoomResolver {
           return room.save();
         })
       );
-      // result?.forEach(async (room) => {
-      //   if (room.status !== ROOM_STATUS.NotAvailable) {
-      //     if (!room?.users?.[0]) {
-      //       room.status = ROOM_STATUS.Available;
-      //     } else {
-      //       room.status = ROOM_STATUS.Owned;
-      //     }
-      //     await room.save();
-      //   }
-      // });
 
       const totalPages = Math.ceil(total / limit);
       if (totalPages > 0 && page > totalPages)

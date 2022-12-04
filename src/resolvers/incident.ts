@@ -1,3 +1,5 @@
+import { createEquipmentReportIncidentCategory } from "./../utils/helper";
+import { Equipment } from "./../entities/Equipment";
 import dayjs from "dayjs";
 import { IncidentCategory } from "./../entities/IncidentCategory";
 import { Incident } from "./../entities/Incident";
@@ -30,6 +32,7 @@ export class IncidentResolver {
           "reporter",
           "employee",
           "room",
+          "equipment",
         ],
       });
 
@@ -39,8 +42,7 @@ export class IncidentResolver {
         dayjs(existingIncident?.dueDate).diff(dayjs()) < 0
       ) {
         existingIncident.status = INCIDENT_STATUS.Overdue;
-      }
-      if (
+      } else if (
         existingIncident?.status === INCIDENT_STATUS.Overdue &&
         existingIncident?.dueDate &&
         dayjs(existingIncident?.dueDate).diff(dayjs()) > 0
@@ -114,6 +116,12 @@ export class IncidentResolver {
           if (incident?.dueDate && dayjs(incident?.dueDate).diff(dayjs()) < 0) {
             incident.status = INCIDENT_STATUS.Overdue;
             await incident.save();
+          } else if (
+            incident?.status === INCIDENT_STATUS.Overdue &&
+            incident?.dueDate &&
+            dayjs(incident?.dueDate).diff(dayjs()) > 0
+          ) {
+            incident.status = INCIDENT_STATUS.ToDo;
           }
         })
       );
@@ -143,7 +151,7 @@ export class IncidentResolver {
     try {
       const existingIncident = await Incident.findOne({
         where: { id },
-        relations: ["employee", "reporter"],
+        relations: ["employee", "reporter", "equipment"],
       });
       if (!existingIncident) {
         throw new Error("Incident Not Found!");
@@ -154,6 +162,19 @@ export class IncidentResolver {
             throw new Error("Incident cannot complete with employee");
           const completedDate = dayjs().toDate();
           existingIncident.completedDate = completedDate;
+
+          if (existingIncident.equipment?.id) {
+            const existingEquipment = await Equipment.findOne({
+              where: { id: existingIncident.equipment?.id },
+            });
+
+            if (!existingEquipment) {
+              throw new Error("Equipment Not Found");
+            }
+
+            existingEquipment.isActive = true;
+            await existingEquipment.save();
+          }
 
           createAndPushNotification(
             {
@@ -193,17 +214,12 @@ export class IncidentResolver {
       roomId,
       status,
       fromCustomer,
+      equipmentId,
+      isEquipmentReport,
       ...rest
     }: UpsertIncidentInput
   ): Promise<IncidentResponse> {
     try {
-      const existingIncidentCategory = await IncidentCategory.findOne({
-        where: { id: incidentCategoryId },
-      });
-
-      if (!existingIncidentCategory)
-        throw new Error("Incident Category Not Found");
-
       const existingLocation = await Location.findOne({
         where: { id: locationId },
       });
@@ -232,7 +248,7 @@ export class IncidentResolver {
         // UPDATE SECTION
         const existingIncident = await Incident.findOne({
           where: { id },
-          relations: ["employee", "reporter"],
+          relations: ["employee", "reporter", "equipment"],
         });
         if (!existingIncident) throw new Error("Incident Not Found");
 
@@ -259,6 +275,19 @@ export class IncidentResolver {
             const completedDate = dayjs().toDate();
             existingIncident.completedDate = completedDate;
 
+            if (existingIncident.equipment?.id) {
+              const existingEquipment = await Equipment.findOne({
+                where: { id: existingIncident.equipment?.id },
+              });
+
+              if (!existingEquipment) {
+                throw new Error("Equipment Not Found");
+              }
+
+              existingEquipment.isActive = true;
+              await existingEquipment.save();
+            }
+
             createAndPushNotification(
               {
                 content: `${existingIncident?.employee?.name} has completed your incident. Thank you for reporting!`,
@@ -279,21 +308,47 @@ export class IncidentResolver {
         };
       } else {
         // CREATE SECTION
+        const equipmentReportIncidentCategory =
+          await createEquipmentReportIncidentCategory();
+
         const newIncident = await Incident.save(
           await Incident.create({
             ...rest,
             fromCustomer,
             locationId,
             reporterId,
-            incidentCategoryId,
+            incidentCategoryId: equipmentReportIncidentCategory?.id,
             roomId,
           })
         );
+
+        if (equipmentId && isEquipmentReport) {
+          const existingEquipment = await Equipment.findOne({
+            where: { id: equipmentId },
+          });
+
+          if (!existingEquipment) {
+            throw new Error("Equipment Not Found");
+          }
+          newIncident.equipment = existingEquipment;
+          existingEquipment.isActive = false;
+          newIncident.isEquipmentReport = isEquipmentReport;
+          await existingEquipment.save();
+        } else if (incidentCategoryId) {
+          const existingIncidentCategory = await IncidentCategory.findOne({
+            where: { id: incidentCategoryId },
+          });
+
+          if (!existingIncidentCategory)
+            throw new Error("Incident Category Not Found");
+          newIncident.incidentCategoryId = existingIncidentCategory.id;
+        }
 
         if (fromCustomer) {
           const locationAdmins = await User.find({
             where: { locationId: locationId, role: USER_ROLE.Admin },
           });
+
           const reporter = await User.findOne({ where: { id: reporterId } });
           locationAdmins?.forEach((admin) => {
             createAndPushNotification(

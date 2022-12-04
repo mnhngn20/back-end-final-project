@@ -291,8 +291,14 @@ export class UserResolver {
         throw new Error(PermissionDeniedError);
 
       if (roomId) {
-        const room = await Room.findOne({ where: { id: roomId } });
+        const room = await Room.findOne({
+          where: { id: roomId },
+          relations: ["users"],
+        });
         if (!room) throw new Error("Room not found");
+        if ((room.users?.length ?? 0) >= (room?.capacity ?? 0)) {
+          throw new Error("Maximum room capacity!");
+        }
         foundUser.roomId = roomId;
         room.status = ROOM_STATUS.Owned;
         await room.save();

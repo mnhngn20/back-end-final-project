@@ -30,6 +30,12 @@ export class UpsertIncidentInput {
   @Field({ nullable: true })
   roomId?: number;
 
+  @Field({ nullable: true })
+  equipmentId?: number;
+
+  @Field({ nullable: true })
+  isEquipmentReport?: boolean;
+
   @Field(() => INCIDENT_STATUS, { nullable: true })
   status?: INCIDENT_STATUS;
 
@@ -42,8 +48,8 @@ export class UpsertIncidentInput {
   @Field()
   reporterId: number;
 
-  @Field()
-  incidentCategoryId: number;
+  @Field({ nullable: true })
+  incidentCategoryId?: number;
 
   @Field()
   locationId: number;
