@@ -82,32 +82,32 @@ export const dataSource = new DataSource({
 
 const main = async () => {
   const app = express();
-  const allowedOrigins = [
-    process.env.CORS_ORIGIN_PROD,
-    process.env.CORS_ORIGIN_DEV,
-    process.env.CORS_ORIGIN_API_PROD,
-    process.env.CORS_ORIGIN_API_DEV,
-    "http://localhost:3001",
-    "http://localhost:4000",
-    "http://localhost:3002",
-    "https://www.supercode.co.za",
-  ];
-  const corsOptions: cors.CorsOptions = {
-    origin: function (origin, callback) {
-      // allow requests with no origin
-      // (like mobile apps or curl requests)
-      if (!origin) return callback(null, true);
-      if (allowedOrigins.indexOf(origin) === -1) {
-        let msg =
-          "The CORS policy for this site does not " +
-          "allow access from the specified Origin.";
-        return callback(new Error(msg), false);
-      }
-      return callback(null, true);
-    },
-    credentials: true,
-  };
-  app.use(cors(corsOptions));
+  // const allowedOrigins = [
+  //   process.env.CORS_ORIGIN_PROD,
+  //   process.env.CORS_ORIGIN_DEV,
+  //   process.env.CORS_ORIGIN_API_PROD,
+  //   process.env.CORS_ORIGIN_API_DEV,
+  //   "http://localhost:3001",
+  //   "http://localhost:4000",
+  //   "http://localhost:3002",
+  //   "https://www.supercode.co.za",
+  // ];
+  // const corsOptions: cors.CorsOptions = {
+  //   origin: function (origin, callback) {
+  //     // allow requests with no origin
+  //     // (like mobile apps or curl requests)
+  //     if (!origin) return callback(null, true);
+  //     if (allowedOrigins.indexOf(origin) === -1) {
+  //       let msg =
+  //         "The CORS policy for this site does not " +
+  //         "allow access from the specified Origin.";
+  //       return callback(new Error(msg), false);
+  //     }
+  //     return callback(null, true);
+  //   },
+  //   credentials: true,
+  // };
+  app.use(cors());
 
   //SECTION: CONNECT POSTGRESQL
   console.log(">>> Connecting postgreSQL");
@@ -145,7 +145,7 @@ const main = async () => {
   apolloServer.applyMiddleware({
     app,
     path: "/graphql",
-    cors: corsOptions,
+    cors: false,
   });
 
   // SECTION: INIT STRIPE WEBHOOK
