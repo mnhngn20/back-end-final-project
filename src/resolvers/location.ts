@@ -1,3 +1,4 @@
+import { updateLocationTotalRevenue } from "./../utils/helper";
 import { LocationService } from "./../entities/LocationService";
 import {
   Arg,
@@ -34,9 +35,14 @@ export class LocationResolver {
           "locationServices",
           "amenities",
           "users",
+          "locationReservations",
         ],
       });
+
       if (!existingLocation) throw new Error("Location Not Found");
+
+      await updateLocationTotalRevenue(existingLocation);
+
       return {
         message: "Get Location successfully",
         location: existingLocation,

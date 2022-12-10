@@ -1,3 +1,4 @@
+import { updateLocationTotalRevenue } from "./../utils/helper";
 import dayjs from "dayjs";
 import { LocationReservation, Location, User } from "./../entities";
 import { Payment } from "../entities";
@@ -119,16 +120,13 @@ export async function handlePayment(paymentId: string) {
       where: {
         id: existingLocationReservation.locationId,
       },
+      relations: ["locationReservations"],
     });
 
     if (!existingLocation) {
       throw new Error("Location not found");
     }
-
-    existingLocation.totalRevenue =
-      (existingLocation.totalRevenue ?? 0) + (existingPayment.totalPrice ?? 0);
-
-    await existingLocation.save();
+    await updateLocationTotalRevenue(existingLocation);
 
     const admins = await User.find({
       where: {

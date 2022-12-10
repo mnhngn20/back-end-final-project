@@ -1,4 +1,4 @@
-import { updateLocationReservationTotalCalculatedPrice } from "./../utils/common/locationReservation";
+import { updateLocationReservationPrice } from "./../utils/common/locationReservation";
 import { Payment } from "./../entities/Payment";
 import { Room } from "./../entities/Room";
 import { User } from "./../entities/User";
@@ -40,10 +40,9 @@ export class LocationReservationResolver {
         throw new Error("Location reservation not found");
 
       //Update Location Reservation total calculated price
-      const totalCalulatedPrice =
-        await updateLocationReservationTotalCalculatedPrice(
-          existingLocationReservation
-        );
+      const totalCalulatedPrice = await updateLocationReservationPrice(
+        existingLocationReservation
+      );
       if (
         totalCalulatedPrice ===
           existingLocationReservation?.totalReceivedPrice &&
@@ -97,10 +96,9 @@ export class LocationReservationResolver {
 
       await Promise.all(
         result?.map(async (locationReservation) => {
-          const totalCalulatedPrice =
-            await updateLocationReservationTotalCalculatedPrice(
-              locationReservation
-            );
+          const totalCalulatedPrice = await updateLocationReservationPrice(
+            locationReservation
+          );
           if (
             totalCalulatedPrice === locationReservation?.totalReceivedPrice &&
             locationReservation.status === LOCATION_RESERVATION_STATUS.Published
@@ -182,6 +180,17 @@ export class LocationReservationResolver {
         existingLocationReservation?.status ===
         LOCATION_RESERVATION_STATUS.Published
       ) {
+        // tru di so tien cua reservation thang nay va tru di so tien prepaid cua payment
+
+        const existingLocation = await Location.findOne({
+          where: {
+            id: existingLocationReservation.locationId,
+          },
+        });
+
+        if (!existingLocation) {
+          throw new Error("Location Not Found");
+        }
         payments.forEach(async (payment) => {
           try {
             if (payment.status === PAYMENT_STATUS.Paid) {
@@ -193,15 +202,7 @@ export class LocationReservationResolver {
             throw new Error(error);
           }
         });
-        const existingLocation = await Location.findOne({
-          where: {
-            id: existingLocationReservation.locationId,
-          },
-        });
 
-        if (!existingLocation) {
-          throw new Error("Location Not Found");
-        }
         existingLocation.totalRevenue =
           (existingLocation.totalRevenue ?? 0) -
           (existingLocationReservation.totalReceivedPrice ?? 0);

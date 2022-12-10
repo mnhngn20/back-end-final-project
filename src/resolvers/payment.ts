@@ -1,3 +1,8 @@
+import { updateLocationReservationPrice } from "./../utils/common/locationReservation";
+import {
+  calculateAndUpdatePaymentPrice,
+  updateLocationTotalRevenue,
+} from "./../utils/helper";
 import { Payment } from "./../entities/Payment";
 import { Location } from "./../entities/Location";
 import {
@@ -12,6 +17,7 @@ import {
   GetPaymentsInput,
   PaymentListResponse,
   PaymentResponse,
+  UpdatePaymentsInput,
   UpdatePaymentStatusInput,
   UpsertPaymentInput,
 } from "../types/payment";
@@ -19,7 +25,6 @@ import { User, Room, LocationReservation } from "../entities";
 import { OutOfBoundsError, PermissionDeniedError } from "../types/Errors";
 import { authMiddleware } from "../middlewares/auth-middleware";
 import {
-  DISCOUNT_TYPE,
   LOCATION_RESERVATION_STATUS,
   PAYMENT_STATUS,
   ROOM_STATUS,
@@ -164,6 +169,46 @@ export class PaymentResolver {
     }
   }
 
+  @Mutation((_returns) => String)
+  @UseMiddleware(authMiddleware)
+  async updatePayments(
+    @Arg("input")
+    { locationReservationId, ...rest }: UpdatePaymentsInput
+  ): Promise<string> {
+    try {
+      const existingLocationReservation = await LocationReservation.findOne({
+        where: {
+          id: locationReservationId,
+        },
+        relations: ["location"],
+      });
+
+      if (!existingLocationReservation) {
+        throw new Error("Location Reservation Not Found!");
+      }
+
+      const locationReservationPayments = await Payment.find({
+        where: {
+          locationReservationId,
+        },
+      });
+
+      locationReservationPayments.forEach(async (payment) => {
+        await calculateAndUpdatePaymentPrice(
+          payment,
+          existingLocationReservation.location.electricCounterPrice ?? 0,
+          { ...rest }
+        );
+      });
+
+      await updateLocationReservationPrice(existingLocationReservation);
+
+      return "Update payments successfully!";
+    } catch (error) {
+      throw new Error(error);
+    }
+  }
+
   @Mutation(() => PaymentResponse)
   @UseMiddleware(authMiddleware)
   async manuallyPay(
@@ -187,11 +232,7 @@ export class PaymentResolver {
         throw new Error("Location Reservation Not Found!");
       }
 
-      existingLocationReservation.totalReceivedPrice =
-        (existingLocationReservation?.totalReceivedPrice ?? 0) +
-        (existingPayment.totalPrice ?? 0);
-
-      await existingLocationReservation.save();
+      updateLocationReservationPrice(existingLocationReservation);
 
       existingPayment.status = PAYMENT_STATUS.Paid;
 
@@ -199,16 +240,13 @@ export class PaymentResolver {
         where: {
           id: existingLocationReservation.locationId,
         },
+        relations: ["locationReservations"],
       });
       if (!existingLocation) {
         throw new Error("Location not found");
       }
 
-      existingLocation.totalRevenue =
-        (existingLocation.totalRevenue ?? 0) +
-        (existingPayment.totalPrice ?? 0);
-
-      await existingLocation.save();
+      await updateLocationTotalRevenue(existingLocation);
 
       return {
         message: "Successfully paid",
@@ -275,7 +313,10 @@ export class PaymentResolver {
     try {
       if (id) {
         // UPDATE SECTION
-        const existingPayment = await Payment.findOne({ where: { id } });
+        const existingPayment = await Payment.findOne({
+          where: { id },
+          relations: ["room"],
+        });
         if (!existingPayment) throw new Error("Payment Not Found");
 
         Payment.merge(existingPayment, {
@@ -290,52 +331,18 @@ export class PaymentResolver {
 
         existingPayment.users = roomUsers;
 
-        let calculatedPaymentPrice = existingRoom.basePrice;
-        if (waterPrice) {
-          calculatedPaymentPrice += waterPrice;
-          existingPayment.waterPrice = waterPrice;
-        }
-        if (electricCounter) {
-          calculatedPaymentPrice +=
-            electricCounter * (existingLocation.electricCounterPrice ?? 0);
-          existingPayment.electricCounter = electricCounter;
-        }
-        if (discountType) {
-          existingPayment.discountType = discountType;
-        }
-
-        if (discount) {
-          if (
-            existingPayment.discountType === DISCOUNT_TYPE.FixedCashDiscount
-          ) {
-            calculatedPaymentPrice -= discount;
+        await calculateAndUpdatePaymentPrice(
+          existingPayment,
+          existingLocation.electricCounterPrice ?? 0,
+          {
+            discount,
+            discountType,
+            electricCounter,
+            extraFee,
+            prePaidFee,
+            waterPrice,
           }
-          if (
-            existingPayment.discountType === DISCOUNT_TYPE.PercentageDiscount
-          ) {
-            calculatedPaymentPrice -= (calculatedPaymentPrice * discount) / 100;
-          }
-          existingPayment.discount = discount;
-        }
-
-        if (extraFee) {
-          existingPayment.extraFee = extraFee;
-          calculatedPaymentPrice += extraFee;
-        }
-
-        if (prePaidFee) {
-          existingPayment.prePaidFee = prePaidFee;
-          calculatedPaymentPrice -= prePaidFee;
-        }
-        if (
-          !!existingPayment.discount ||
-          !!existingPayment.waterPrice ||
-          !!existingPayment.electricCounter ||
-          existingPayment.extraFee ||
-          existingPayment.prePaidFee
-        ) {
-          existingPayment.status = PAYMENT_STATUS.Unpaid;
-        }
+        );
 
         if (userIds) {
           const existingUsers = await User.find({
@@ -347,24 +354,7 @@ export class PaymentResolver {
           existingPayment.users = existingUsers;
         }
 
-        existingPayment.totalPrice = calculatedPaymentPrice;
-
         await existingPayment.save();
-        // Update total calculated price
-        let totalCalculatedPrice = 0;
-        existingLocationReservation.payments.forEach((payment) => {
-          if (payment?.id === existingPayment?.id) {
-            totalCalculatedPrice +=
-              (existingPayment.totalPrice ?? 0) +
-              (existingPayment.prePaidFee ?? 0);
-          } else {
-            totalCalculatedPrice +=
-              (payment.totalPrice ?? 0) + (payment.prePaidFee ?? 0);
-          }
-        });
-
-        existingLocationReservation.totalCalculatedPrice = totalCalculatedPrice;
-        await existingLocationReservation.save();
 
         return {
           message: "Update payment successfully",
