@@ -24,6 +24,7 @@ import {
   IncidentCategoryResolver,
   IncidentResolver,
   NotificationResolver,
+  ContactInformationResolver,
   StripeResolver,
 } from "./resolvers";
 import {
@@ -132,6 +133,7 @@ const main = async () => {
         IncidentResolver,
         NotificationResolver,
         StripeResolver,
+        ContactInformationResolver,
       ],
       validate: false,
     }),
