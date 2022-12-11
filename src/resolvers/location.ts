@@ -275,16 +275,6 @@ export class LocationResolver {
 
           newLocation.locationServices = locationServices;
 
-          if (contactInformations) {
-            contactInformations.forEach(async (contactInformation) => {
-              await ContactInformation.save(
-                await ContactInformation.create({
-                  ...contactInformation,
-                  locationId: newLocation.id,
-                })
-              );
-            });
-          }
           if (newLocation?.lat && newLocation?.long)
             await convertCoordToGeo(newLocation.id, {
               lat: newLocation?.lat,

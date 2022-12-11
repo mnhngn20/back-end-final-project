@@ -33,8 +33,8 @@ export class ContactInformation extends BaseEntity {
   @Column({ nullable: true })
   email?: string;
 
-  @Field()
-  @Column()
+  @Field({ nullable: true })
+  @Column({ nullable: true })
   locationId: number;
 
   @Field()
