@@ -37,7 +37,7 @@ export class IncidentResolver {
       });
 
       if (
-        existingIncident?.status !== INCIDENT_STATUS.Done &&
+        existingIncident?.status !== INCIDENT_STATUS.ToDo &&
         existingIncident?.dueDate &&
         dayjs(existingIncident?.dueDate).diff(dayjs()) < 0
       ) {
@@ -113,7 +113,11 @@ export class IncidentResolver {
 
       await Promise.all(
         result.map(async (incident) => {
-          if (incident?.dueDate && dayjs(incident?.dueDate).diff(dayjs()) < 0) {
+          if (
+            incident?.status === INCIDENT_STATUS.ToDo &&
+            incident?.dueDate &&
+            dayjs(incident?.dueDate).diff(dayjs()) < 0
+          ) {
             incident.status = INCIDENT_STATUS.Overdue;
             await incident.save();
           } else if (
