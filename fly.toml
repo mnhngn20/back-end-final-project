@@ -1,6 +1,6 @@
-# fly.toml file generated for little-sun-4813 on 2022-12-14T09:50:33+07:00
+# fly.toml file generated for backend-final on 2022-12-14T22:20:15+07:00
 
-app = "little-sun-4813"
+app = "backend-final"
 kill_signal = "SIGINT"
 kill_timeout = 5
 processes = []
@@ -29,7 +29,7 @@ processes = []
 
   [[services.ports]]
     handlers = ["tls", "http"]
-    port = 443
+    port = 4000
 
   [[services.tcp_checks]]
     grace_period = "1s"

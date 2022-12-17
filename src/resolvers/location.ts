@@ -34,7 +34,6 @@ export class LocationResolver {
           "contactInformations",
           "locationServices",
           "amenities",
-          "users",
           "locationReservations",
         ],
       });
