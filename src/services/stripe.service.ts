@@ -64,7 +64,7 @@ export class StripeService {
 
   public async transfer(accountId: string, amount: number) {
     return await this.stripe.transfers.create({
-      amount: Math.round(amount / 23000),
+      amount: Math.round(amount / 23000) * 100,
       destination: accountId,
       currency: "usd",
     });
@@ -146,7 +146,7 @@ export async function handlePayment(paymentId: string) {
             )} is settled by customer! Please review your location reservation board!`,
             locationId: existingLocationReservation.locationId,
             dataId: existingPayment?.id,
-            title: "New Payment",
+            title: "Payment Completed",
             userId: admin?.id,
             type: NOTIFICATION_TYPE.Payment,
           },

@@ -419,7 +419,7 @@ export class LocationReservationResolver {
             ).format("MMMM YYYY")} reservation!`,
             locationId: newLocationReservation.locationId,
             dataId: newLocationReservation.id,
-            title: "New Payment",
+            title: "Reservation",
             userId: existingCreatedByUser?.id,
             type: NOTIFICATION_TYPE.Reservation,
           },
