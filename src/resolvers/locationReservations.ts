@@ -14,7 +14,7 @@ import {
 } from "../types/locationReservation";
 import { OutOfBoundsError, PermissionDeniedError } from "../types/Errors";
 import { authMiddleware } from "../middlewares/auth-middleware";
-import { Between, LessThanOrEqual, MoreThanOrEqual } from "typeorm";
+import { Between } from "typeorm";
 import dayjs from "dayjs";
 import {
   LOCATION_RESERVATION_STATUS,
@@ -81,8 +81,7 @@ export class LocationReservationResolver {
       let options = {
         ...(createdById && { createdById }),
         ...(locationId && { locationId }),
-        ...(fromDate && { startDate: MoreThanOrEqual(fromDate) }),
-        ...(toDate && { startDate: LessThanOrEqual(toDate) }),
+        ...(fromDate && toDate && { startDate: Between(fromDate, toDate) }),
         ...(status && { status }),
       };
 

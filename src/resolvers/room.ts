@@ -23,7 +23,7 @@ import {
   RoomResponse,
   UpsertRoomInput,
 } from "../types/room";
-import { LessThanOrEqual, ILike, MoreThanOrEqual } from "typeorm";
+import { LessThanOrEqual, ILike, MoreThanOrEqual, Between } from "typeorm";
 import { ROOM_STATUS, USER_ROLE } from "../constants";
 import { Location, Payment } from "../entities";
 
@@ -80,6 +80,12 @@ export class RoomResolver {
         ...(maxBasePrice !== undefined &&
           maxBasePrice !== null && {
             basePrice: LessThanOrEqual(maxBasePrice),
+          }),
+        ...(minBasePrice !== undefined &&
+          minBasePrice !== null &&
+          maxBasePrice !== undefined &&
+          maxBasePrice !== null && {
+            basePrice: Between(minBasePrice, maxBasePrice),
           }),
         ...(floor && { floor }),
         ...(capacity && { capacity }),
