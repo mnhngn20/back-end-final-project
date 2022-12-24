@@ -195,6 +195,16 @@ export class IncidentResolver {
       }
 
       Incident.merge(existingIncident, { ...rest });
+      if (rest.employeeId) {
+        const existingEmployee = await User.findOne({
+          where: { id: rest.employeeId },
+        });
+        if (!existingEmployee) {
+          throw new Error("Employee Not Found");
+        }
+        existingIncident.employeeId = rest.employeeId;
+        existingIncident.employee = existingEmployee;
+      }
 
       return {
         message: "Update Incident successfully!",
