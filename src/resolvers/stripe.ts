@@ -45,7 +45,7 @@ export class StripeResolver {
   @UseMiddleware(authMiddleware)
   async createStripeCheckoutSession(
     @Arg("input")
-    { paymentId, cancelUrl, successUrl }: CreateStripeCheckoutInput
+    { paymentId, cancelUrl, successUrl, payerId }: CreateStripeCheckoutInput
   ): Promise<StripeResponse> {
     const stripeService = new StripeService();
     const existingPayment = await Payment.findOne({
@@ -67,6 +67,7 @@ export class StripeResolver {
       title: `Location: ${existingPayment.location.name}`,
       price: existingPayment.totalPrice,
       image: existingPayment.room.thumbnail,
+      payerId,
     });
 
     if (!session.url) {

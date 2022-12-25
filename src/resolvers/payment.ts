@@ -1,3 +1,4 @@
+import dayjs from "dayjs";
 import { updateLocationReservationPrice } from "./../utils/common/locationReservation";
 import {
   calculateAndUpdatePaymentPrice,
@@ -21,7 +22,7 @@ import {
   UpdatePaymentStatusInput,
   UpsertPaymentInput,
 } from "../types/payment";
-import { User, Room, LocationReservation } from "../entities";
+import { User, Room, LocationReservation, Transaction } from "../entities";
 import { OutOfBoundsError, PermissionDeniedError } from "../types/Errors";
 import { authMiddleware } from "../middlewares/auth-middleware";
 import {
@@ -210,14 +211,24 @@ export class PaymentResolver {
   @Mutation(() => PaymentResponse)
   @UseMiddleware(authMiddleware)
   async manuallyPay(
-    @Arg("id")
-    id: number
+    @Arg("paymentId")
+    id: number,
+    @Arg("payerId")
+    payerId: number
   ): Promise<PaymentResponse> {
     try {
       const existingPayment = await Payment.findOne({ where: { id } });
+      const existingPayer = await User.findOne({
+        where: {
+          id: payerId,
+        },
+      });
 
       if (!existingPayment) {
         throw new Error("Payment not found!");
+      }
+      if (!existingPayer) {
+        throw new Error("User not found!");
       }
 
       const existingLocationReservation = await LocationReservation.findOne({
@@ -245,6 +256,14 @@ export class PaymentResolver {
       }
 
       await updateLocationTotalRevenue(existingLocation);
+
+      await Transaction.create({
+        amount: existingPayment.totalPrice ?? 0,
+        userId: payerId,
+        description: `Payment from Admin for ${dayjs(
+          existingLocationReservation.startDate
+        ).format("MMMM YYYY")} Reservation`,
+      }).save();
 
       return {
         message: "Successfully paid",

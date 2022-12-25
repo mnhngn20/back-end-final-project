@@ -11,3 +11,4 @@ export { LocationReservation } from "./LocationReservation";
 export { Incident } from "./Incident";
 export { IncidentCategory } from "./IncidentCategory";
 export { Notification } from "./Notification";
+export { Transaction } from "./Transaction";

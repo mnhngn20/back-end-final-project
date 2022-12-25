@@ -13,3 +13,4 @@ export { IncidentCategoryResolver } from "./incidentCategory";
 export { NotificationResolver } from "./notification";
 export { StripeResolver } from "./stripe";
 export { ContactInformationResolver } from "./contactInformation";
+export { TransactionResolver } from "./transaction";

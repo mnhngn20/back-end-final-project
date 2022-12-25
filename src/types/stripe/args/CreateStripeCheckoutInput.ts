@@ -8,4 +8,6 @@ export class CreateStripeCheckoutInput {
   cancelUrl: string;
   @Field()
   paymentId: number;
+  @Field()
+  payerId: number;
 }

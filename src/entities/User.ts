@@ -18,6 +18,7 @@ import { Payment } from "./Payment";
 import { LocationReservation } from "./LocationReservation";
 import { Incident } from "./Incident";
 import { Notification } from "./Notification";
+import { Transaction } from "./Transaction";
 
 @ObjectType()
 @Entity()
@@ -77,6 +78,10 @@ export class User extends BaseEntity {
   @ManyToMany(() => Payment, (payment) => payment.users)
   @JoinTable()
   payments: Payment[];
+
+  @Field((_type) => [Transaction], { nullable: true })
+  @OneToMany(() => Transaction, (transaction) => transaction.user)
+  transactions: Transaction[];
 
   @Field((_type) => [LocationReservation], { nullable: true })
   @OneToMany(

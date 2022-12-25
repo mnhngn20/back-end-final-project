@@ -148,9 +148,9 @@ export class LocationReservationResolver {
       if (status === LOCATION_RESERVATION_STATUS.Published) {
         payments.forEach(async (payment) => {
           try {
-            // if (payment.status === PAYMENT_STATUS.MissingLivingPrice) {
-            //   payment.status = PAYMENT_STATUS.Unpaid;
-            // }
+            if (payment.status === PAYMENT_STATUS.MissingLivingPrice) {
+              payment.status = PAYMENT_STATUS.Unpaid;
+            }
             await payment.save();
             if (payment.status === PAYMENT_STATUS.Unpaid) {
               payment?.users.forEach((user) => {
@@ -195,6 +195,16 @@ export class LocationReservationResolver {
             if (payment.status === PAYMENT_STATUS.Paid) {
               payment.status = PAYMENT_STATUS.Unpaid;
               existingLocationReservation.totalReceivedPrice = 0;
+            } else if (payment.status === PAYMENT_STATUS.Unpaid) {
+              if (
+                !payment.discount &&
+                !payment.waterPrice &&
+                !payment.electricCounter &&
+                !payment.extraFee &&
+                !payment.prePaidFee
+              ) {
+                payment.status = PAYMENT_STATUS.MissingLivingPrice;
+              }
             }
             await payment.save();
           } catch (error) {

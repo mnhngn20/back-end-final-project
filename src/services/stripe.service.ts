@@ -1,3 +1,4 @@
+import { Transaction } from "./../entities/Transaction";
 import { updateLocationTotalRevenue } from "./../utils/helper";
 import dayjs from "dayjs";
 import { LocationReservation, Location, User } from "./../entities";
@@ -33,6 +34,7 @@ export class StripeService {
     cancelUrl,
     successUrl,
     paymentId,
+    payerId,
   }: CreateCheckoutSessionInput): Promise<
     Stripe.Response<Stripe.Checkout.Session>
   > {
@@ -55,6 +57,7 @@ export class StripeService {
       ],
       metadata: {
         paymentId,
+        payerId,
       },
       mode: "payment",
       success_url: successUrl,
@@ -71,10 +74,8 @@ export class StripeService {
   }
 }
 
-export async function handlePayment(paymentId: string) {
+export async function handlePayment(paymentId: string, payerId: string) {
   try {
-    console.log("aaaaa");
-
     const stripeService = new StripeService();
 
     const existingPayment = await Payment.findOne({
@@ -83,9 +84,17 @@ export async function handlePayment(paymentId: string) {
       },
       relations: ["location", "room", "locationReservation"],
     });
+    const existingPayer = await User.findOne({
+      where: {
+        id: Number(payerId),
+      },
+    });
 
     if (!existingPayment) {
       throw new Error("Payment not found!");
+    }
+    if (!existingPayer) {
+      throw new Error("User not found!");
     }
 
     if (!existingPayment.location.stripeAccountId) {
@@ -134,6 +143,14 @@ export async function handlePayment(paymentId: string) {
         role: USER_ROLE.Admin,
       },
     });
+
+    await Transaction.create({
+      amount: existingPayment.totalPrice ?? 0,
+      userId: existingPayer?.id,
+      description: `Payment for ${dayjs(
+        existingLocationReservation.startDate
+      ).format("MMMM YYYY")} Reservation`,
+    }).save();
 
     await Promise.all(
       admins?.map(async (admin) => {

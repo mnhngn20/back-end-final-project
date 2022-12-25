@@ -6,6 +6,7 @@ export interface CreateCheckoutSessionInput {
   image?: string;
   price?: number;
   paymentId: number;
+  payerId: number;
 }
 
 // args

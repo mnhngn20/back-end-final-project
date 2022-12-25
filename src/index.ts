@@ -26,6 +26,7 @@ import {
   NotificationResolver,
   ContactInformationResolver,
   StripeResolver,
+  TransactionResolver,
 } from "./resolvers";
 import {
   Equipment,
@@ -41,6 +42,7 @@ import {
   Incident,
   IncidentCategory,
   Notification,
+  Transaction,
 } from "./entities";
 import dayjs from "dayjs";
 import Stripe from "stripe";
@@ -78,6 +80,7 @@ export const dataSource = new DataSource({
     Incident,
     IncidentCategory,
     Notification,
+    Transaction,
   ],
 });
 
@@ -134,6 +137,7 @@ const main = async () => {
         NotificationResolver,
         StripeResolver,
         ContactInformationResolver,
+        TransactionResolver,
       ],
       validate: false,
     }),
@@ -157,8 +161,6 @@ const main = async () => {
     (request, response) => {
       const payload = request.body;
       const sig = request.headers["stripe-signature"];
-      console.log("aaaa1a");
-
       if (!sig) {
         return response.status(400).send(`Invalid signature`);
       }
@@ -175,8 +177,14 @@ const main = async () => {
         const checkoutSession = event.data.object as Stripe.Checkout.Session;
 
         if (event.type === "checkout.session.completed") {
-          if (checkoutSession.metadata?.paymentId) {
-            handlePayment(checkoutSession.metadata?.paymentId);
+          if (
+            checkoutSession.metadata?.paymentId &&
+            checkoutSession.metadata?.payerId
+          ) {
+            handlePayment(
+              checkoutSession.metadata?.paymentId,
+              checkoutSession.metadata?.payerId
+            );
           }
         }
         ``;
