@@ -40,11 +40,11 @@ export class LocationReservationResolver {
         throw new Error("Location reservation not found");
 
       //Update Location Reservation total calculated price
-      const totalCalulatedPrice = await updateLocationReservationPrice(
+      const totalCalculatedPrice = await updateLocationReservationPrice(
         existingLocationReservation
       );
       if (
-        totalCalulatedPrice ===
+        totalCalculatedPrice ===
           existingLocationReservation?.totalReceivedPrice &&
         existingLocationReservation.status ===
           LOCATION_RESERVATION_STATUS.Published
@@ -148,29 +148,29 @@ export class LocationReservationResolver {
       if (status === LOCATION_RESERVATION_STATUS.Published) {
         payments.forEach(async (payment) => {
           try {
-            if (payment.status === PAYMENT_STATUS.MissingLivingPrice) {
-              payment.status = PAYMENT_STATUS.Unpaid;
-            }
+            // if (payment.status === PAYMENT_STATUS.MissingLivingPrice) {
+            //   payment.status = PAYMENT_STATUS.Unpaid;
+            // }
             await payment.save();
-            console.log(payment?.users);
-
-            payment?.users.forEach((user) => {
-              createAndPushNotification(
-                {
-                  content: `You have new payment for ${dayjs(
-                    existingLocationReservation?.startDate
-                  ).format(
-                    "MMMM"
-                  )}. Please consider to check this payment as soon as possible. Thank you!`,
-                  locationId: existingLocationReservation.locationId,
-                  dataId: payment?.id,
-                  title: "New Payment",
-                  userId: user?.id,
-                  type: NOTIFICATION_TYPE.Payment,
-                },
-                [user]
-              );
-            });
+            if (payment.status === PAYMENT_STATUS.Unpaid) {
+              payment?.users.forEach((user) => {
+                createAndPushNotification(
+                  {
+                    content: `You have new payment for ${dayjs(
+                      existingLocationReservation?.startDate
+                    ).format(
+                      "MMMM"
+                    )}. Please consider to check this payment as soon as possible. Thank you!`,
+                    locationId: existingLocationReservation.locationId,
+                    dataId: payment?.id,
+                    title: "New Payment",
+                    userId: user?.id,
+                    type: NOTIFICATION_TYPE.Payment,
+                  },
+                  [user]
+                );
+              });
+            }
           } catch (error) {
             throw new Error(error);
           }

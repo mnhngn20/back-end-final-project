@@ -194,7 +194,8 @@ export class PaymentResolver {
         await calculateAndUpdatePaymentPrice(
           payment,
           existingLocationReservation.location.electricCounterPrice ?? 0,
-          { ...rest }
+          { ...rest },
+          true
         );
       });
 

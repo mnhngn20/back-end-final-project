@@ -34,7 +34,8 @@ export const calculateAndUpdatePaymentPrice = async (
     discount,
     extraFee,
     prePaidFee,
-  }: Partial<UpsertPaymentInput>
+  }: Partial<UpsertPaymentInput>,
+  isUpdateAll = false
 ) => {
   try {
     const existingRoom = await Room.findOne({
@@ -79,11 +80,12 @@ export const calculateAndUpdatePaymentPrice = async (
       calculatedPaymentPrice -= prePaidFee;
     }
     if (
-      !!payment.discount ||
-      !!payment.waterPrice ||
-      !!payment.electricCounter ||
-      !!payment.extraFee ||
-      !!payment.prePaidFee
+      (!!payment.discount ||
+        !!payment.waterPrice ||
+        !!payment.electricCounter ||
+        !!payment.extraFee ||
+        !!payment.prePaidFee) &&
+      !isUpdateAll
     ) {
       payment.status = PAYMENT_STATUS.Unpaid;
     }

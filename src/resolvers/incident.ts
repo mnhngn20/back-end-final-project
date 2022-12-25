@@ -190,6 +190,31 @@ export class IncidentResolver {
             },
             [existingIncident.reporter]
           );
+        } else {
+          if (status === INCIDENT_STATUS.Cancel) {
+            createAndPushNotification(
+              {
+                content: `${existingIncident?.employee?.name} has cancelled your incident.`,
+                title: `Incident Cancelled`,
+                type: NOTIFICATION_TYPE.Incident,
+                userId: existingIncident?.reporterId,
+                dataId: existingIncident?.id,
+              },
+              [existingIncident.reporter]
+            );
+          }
+          if (status === INCIDENT_STATUS.InProgress) {
+            createAndPushNotification(
+              {
+                content: `${existingIncident?.employee?.name} is handling your incident. Please be patient`,
+                title: `Incident In Progress`,
+                type: NOTIFICATION_TYPE.Incident,
+                userId: existingIncident?.reporterId,
+                dataId: existingIncident?.id,
+              },
+              [existingIncident.reporter]
+            );
+          }
         }
         existingIncident.status = status;
       }
